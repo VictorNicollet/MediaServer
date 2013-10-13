@@ -11,8 +11,7 @@
       error: Error.fatal
       type: 'POST'
       contentType: 'application/json'
-      data = JSON.stringify payload
-
+      data: JSON.stringify payload
 
   # Grab the e-mail of the currently logged in user. This does not
   # query the server, only read from the cookie. Returns null if there

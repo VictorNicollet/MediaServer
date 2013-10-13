@@ -1,13 +1,15 @@
 require "coffee-script"
 proof = require "./proof"
 statics = require "./statics"
+session = require "./session"
 seq = require "./seq"
 express = require "express"
 
 app = do express
-
+app.use express.bodyParser()
+app.use express.logger()
+  
 startApplication = (app, next) -> 
-  app.use express.logger()
   port = process.env.port || 5000
   app.listen port, ->
     console.log("Listening on " + port)
@@ -16,6 +18,7 @@ startApplication = (app, next) ->
 # All module initialization functions
 installers = [
   statics.install,
+  session.install,
   startApplication
 ]
 
