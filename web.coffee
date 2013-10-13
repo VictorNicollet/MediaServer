@@ -1,15 +1,27 @@
 require "coffee-script"
-
 proof = require "./proof"
-html = require "./html"
+statics = require "./statics"
 express = require "express"
+
 app = do express
 
-app.use express.logger()
+startApplication = (app, next) -> 
+  app.use express.logger()
+  port = process.env.port || 5000
+  app.listen port, ->
+    console.log("Listening on " + port)
+    do next
 
-app.get '/', (request, response) ->
-  response.send html.index()
+# All module initialization functions
+installers = [
+  statics.install,
+  startApplication
+]
 
-port = process.env.port || 5000
-app.listen port, ->
-  console.log("Listening on " + port)
+# Loop through all installers and call them
+run = () ->
+  return if installers.length == 0
+  first = do installers.shift
+  first app, run
+
+  
