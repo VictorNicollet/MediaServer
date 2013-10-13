@@ -10,7 +10,7 @@
   error: (text) ->
     do API.requests.clear
     API.requests.isRunning = false      
-    onError text
+    API.onError text
 
   # Post a command to the API server. Consider this function private.
   post: (command,payload,next) ->
@@ -24,7 +24,11 @@
       type: 'POST'
       contentType: 'application/json'
       data: JSON.stringify payload
-      error: error
+      error: (xhr,error) ->
+        switch error
+          when "timeout" then API.error "Request timed out"
+          when "error" then API.error "HTTP error occurred"
+          when "parsererror" then API.error "Server returned garbled data"
       
   # Grab the e-mail of the currently logged in user. This does not
   # query the server, only read from the cookie. Returns null if there
