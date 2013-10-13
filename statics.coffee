@@ -1,21 +1,50 @@
 require "coffee-script"
 fs = require "fs"
 child = require "child_process"
+seq = require "./seq"
 
 # Configuration: source files
+cssSource = "css"
 indexSource = "templates/index.html"
-coffeeSource = "client/*.coffee"
-command = "coffee --print --compiler #{coffeeSource}"  
+coffeeSource = "client"
+command = "coffee --print --compiler #{coffeeSource}/*.coffee"  
+
+# Serving content at an URL
+serve = (app, url, content) ->
+  console.log "Static content: ", url
+  app.get url, (request, response) ->
+    response.send content
 
 # Install the module
 module.exports.install = (app, next) ->
-  fs.readFile indexSource, "utf8", (err,indexHtml) ->
-    child.exec command, (err,appJs) ->
+  seq.run [
 
-      app.get "/app.js", (request, response) ->
-        response.send appJs
+    # CSS files are concatenated together
+    (next) ->
+      content = []
+      read = (file, next) ->
+        file = cssSource + "/" + file
+        fs.readFile file, "utf8", (err,css) ->
+          console.log "Include CSS: ", file
+          content.push css
+          do next
+      fs.readdir cssSource, (err,files) ->
+        seq.iter read, files, ->
+          serve app, "/app.css", content.join "\n"
+          do next
 
-      app.get '*', (request, response) ->
-        response.send indexHtml
+    # Client coffeescript is compiled
+    (next) ->
+      child.exec command, (err,appJs) ->
+        serve app, "/app.js", appJs
+        do next
 
-      do next
+    # Index HTML is compiled as-is
+    (next) -> 
+      fs.readFile indexSource, "utf8", (err,indexHtml) ->
+        serve app, '*', indexHtml
+        do next
+
+  ], next
+
+

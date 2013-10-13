@@ -1,6 +1,7 @@
 require "coffee-script"
 proof = require "./proof"
 statics = require "./statics"
+seq = require "./seq"
 express = require "express"
 
 app = do express
@@ -19,9 +20,5 @@ installers = [
 ]
 
 # Loop through all installers and call them
-run = () ->
-  return if installers.length == 0
-  first = do installers.shift
-  first app, run
-
-  
+call = (f, next) -> f app, next
+seq.iter call, installers, -> 
