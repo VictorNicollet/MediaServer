@@ -38,12 +38,17 @@
   # Reach a route. Updates the browser's current URL.
   go: (path) ->
     history.pushState null, null, path
-    dispatch path
+    Route.dispatch path
 
 # When state is popped, use the current path to dispatch 
 @onpopstate = (event) ->
   do Route.dispatch
 
-
+# React to the event
+$('body').on 'click', 'a', (event) ->
+  return true if document.location.host != @host
+  do event.stopPropagation
+  Route.go @pathname
+  return false
     
     
