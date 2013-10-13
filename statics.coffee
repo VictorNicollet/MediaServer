@@ -7,11 +7,11 @@ seq = require "./seq"
 cssSource = "css"
 indexSource = "templates/index.html"
 coffeeSource = "client"
-command = "coffee --print --compiler #{coffeeSource}/*.coffee"  
+command = "coffee --print --compile #{coffeeSource}/*.coffee"  
 
 # Serving content at an URL
 serve = (app, url, content, type = "text/html") ->
-  console.log "Static content: ", url, type
+  console.log "Static content: #{url} (#{content.length} chars)"
   app.get url, (request, response) ->
     response.set "Content-Type", type
     response.send content
