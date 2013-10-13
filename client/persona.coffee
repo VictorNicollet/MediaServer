@@ -18,10 +18,9 @@ $ ->
   $u = $ '#username'
   navigator.id.watch
     loggedInUser: API.getUserEmail()
-    onlogin: (assertion) ->
-      do paint
+    onlogin: (a) ->
+      API.startSession a, paint
     onlogout: () ->
-      do API.closeSession
-      do paint
+      API.closeSession paint
     onready: paint
   
