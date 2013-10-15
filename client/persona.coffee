@@ -2,7 +2,7 @@
 
 @Persona =
 
-  request: ->
+  showLoginScreen: ->
 
     $('#container').html ''
 
@@ -13,8 +13,7 @@
     $b.appendTo $well
     $b.click ->
       do navigator.id.request
-
-
+  
 $ ->
   
   $in = $ '#login'
@@ -25,19 +24,20 @@ $ ->
   $out.click ->
     do navigator.id.logout
 
-  paint = ->
+  Persona.paint = -> 
     u = API.getUserEmail()
     $in.toggle(u == null)
     $out.toggle(u != null)
     $('#username').text(u || '')
+    do Persona.showLoginScreen if u == null
 
-  $u = $ '#username'
   navigator.id.watch
     loggedInUser: API.getUserEmail()
     onlogin: (a) ->
-      API.session.start a, paint
-      do Route.dispatch
+      API.session.start a, () ->
+        do Persona.paint
+        do Route.dispatch
     onlogout: () ->
-      API.session.close paint
-    onready: paint
+      API.session.close Persona.paint
+    onready: Persona.paint
   

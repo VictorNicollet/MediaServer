@@ -12,13 +12,19 @@
     API.requests.isRunning = false      
     API.onError text
 
+  # A login request happened. Consider this function private.
+  loginRequest: ->
+    do API.requests.clear
+    API.requests.isRunning = false      
+    do Persona.paint
+
   # Post a command to the API server. Consider this function private.
   post: (command,payload,next) ->
     $.ajax
       url: '/api/' + command
       success: (data) ->
         if data.requiresLogin
-          do Persona.request
+          do API.loginRequest
         else if "error" of data         
           API.error data.error
         else
@@ -38,7 +44,7 @@
       url: '/api/' + command
       success: (data) ->
         if data.requiresLogin
-          do Persona.request
+          do API.loginRequest
         else if "error" of data
           API.error data.error
         else
