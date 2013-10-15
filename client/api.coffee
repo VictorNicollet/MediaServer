@@ -17,7 +17,9 @@
     $.ajax
       url: '/api/' + command
       success: (data) ->
-        if "error" of data
+        if data.requiresLogin
+          do Persona.request
+        else if "error" of data         
           API.error data.error
         else
           next data
@@ -35,7 +37,9 @@
     $.ajax
       url: '/api/' + command
       success: (data) ->
-        if "error" of data
+        if data.requiresLogin
+          do Persona.request
+        else if "error" of data
           API.error data.error
         else
           next data

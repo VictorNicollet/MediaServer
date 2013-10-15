@@ -1,0 +1,9 @@
+div.login {
+  text-align: center;
+}
+
+div.login > * {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 30px;
+}
