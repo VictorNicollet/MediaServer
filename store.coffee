@@ -55,12 +55,16 @@ get = (path,next) ->
 getJSON = (path,next) ->
   get path, (err,data) ->
     return next err, data if err
+    json = null
     try
       data = data.toString 'utf8'
-      next err, JSON.parse data
+      console.log data
+      json = JSON.parse data
     catch error
-      next "Error parsing JSON", null
-
+      console.log error
+      return next "Error parsing JSON", null
+    next null, json
+    
 module.exports.getJSON = getJSON
 
 # Update a value on S3
