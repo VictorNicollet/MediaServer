@@ -4,7 +4,7 @@ api = require './api'
 proof = require './proof'
 
 # You cannot have more than this number of albums
-maxAlbums = 20
+maxAlbums = 50
 
 # The global list of albums
 defaultAlbums = 
@@ -26,6 +26,9 @@ makeAlbum = (albums,name) ->
   get: []
   put: []
   id: nextId albums
+  pics: 0
+  previews: 0
+  deleted: []
 
 isAdmin = (albums,email) ->
   albums.admins.indexOf email != -1
@@ -33,8 +36,11 @@ isAdmin = (albums,email) ->
 # Grab all visible albums for a given user
 grabVisibleAlbums = (albums,email) -> 
   grab = (album) ->
-    name: album.name
-    album: nextId albums
+    name: album.name || "Untitled"
+    album: album.id
+    _pics: album.pics || 0
+    _previews: album.previews || 0
+    _deleted: album.deleted || []
     access:
       if admin then 'OWN' else
         if album.put.indexOf emailId != -1 then 'PUT' else

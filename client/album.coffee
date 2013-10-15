@@ -21,6 +21,20 @@ do ->
       albumById[album.album] = album
       next album
 
+  # Get an album by identifier. Return null if not available.
+  get = (id,next,reload=true) ->
+    if id of albumById
+      album = albumById[id]
+      now = (new Date).toISOString()
+      return next album if now < album.expires
+      return next null if !reload
+      loadAll ->
+        get id, next, false
+    else
+      return next null if !reload
+      loadAll ->
+        get id, next, false
+
   # ==============================================================================
   # Controller functions
   $ ->
@@ -47,4 +61,31 @@ do ->
       render $page
 
     Route.register "/album/*", (args,render) -> 
-      render args[0]
+      get args[0], (album) ->
+
+        $page = $ '<div/>'
+
+        $name = $('<h2/>').text(album.name)
+        $name.appendTo $page
+
+        images = album._pics - album._deleted.length
+
+        if images > 0
+
+          i = 0
+        
+          divs = while i++ < images
+            [ "<div class='col-md-3'><a href='/album/",album.album,"/",i-1,
+              "'><img id='pic-",album.album,"-",i-1,
+              "' style='height:100%;width:100%'/></a></div>" ]
+
+          html = [].concat.apply([], divs).join("")
+
+          $page.append(html)   
+
+        else
+
+          $page.append("<div class='well empty'>No pictures in this album</div>")
+
+
+        render $page
