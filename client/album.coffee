@@ -26,9 +26,9 @@ do ->
   $ ->
 
     Route.register "/", (args,render) ->
-      $page = $ "<div/>"
+      $page = $ "<table class='table'/>"
 
-      $newAlbum = $ "<div class='row'><button class='pull-right' type='button' class='btn btn-success'>New album</button></div>"
+      $newAlbum = $ "<thead><tr><td><button type='button' class='btn btn-success btn-xs pull-right'>New album</button></tr></td><thead>"
       $newAlbum.appendTo $page
       $newAlbum.find("button").click ->
         name = prompt "Name of the new album"
@@ -36,7 +36,7 @@ do ->
           create name, (album) ->
             Route.go("/album/" + album.album)
 
-      $list = $ "<table class='table'/>"      
+      $list = $ "<tbody/>"      
       $list.appendTo $page
       loadAll (list) ->
         for album in list
