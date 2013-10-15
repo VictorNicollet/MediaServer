@@ -32,7 +32,7 @@ grabVisibleAlbums = (albums,email) ->
     access:
       if isAdmin then 'OWN' else
         if album.put.indexOf emailId != -1 then 'PUT' else
-          if album.get.indexOf emailid != -1 then 'GET' else ''
+          if album.get.indexOf emailId != -1 then 'GET' else ''
   isAdmin = albums.admins.indexOf email != -1
   emailId = albums.contacts.indexOf email
   grabbed = (grab album for album in albums.albums)
@@ -40,18 +40,23 @@ grabVisibleAlbums = (albums,email) ->
   
 module.exports.install = (app,next) ->
 
+  # Return the list of all available albums
+  api.get app, 'albums', (req, fail, json) ->
+    albums = store.getJSON 'albums.json', (err,albums) ->
+      return fail err if err
+      json { albums: grabVisibleAlbums albums }
+
   # Creating a new album, returning the entire new album set
   api.post app, 'album/create', (req, fail, json) ->
-    newAlbums = null
+    album = null
     update = (albums,next) ->
-      newAlbums = albums || defaultAlbums
+      albums = albums || defaultAlbums
       name = req.body.name || "Untitled"
-      album = makeAlbum newAlbums, name
-      newAlbums.albums.push album
-      next null, newAlbums
+      album = makeAlbum albums, name
+      albums.albums.push album
+      next null, albums
     store.updateJSON 'albums.json', update, (err) -> 
       return fail err if err
-      json { albums: grabVisibleAlbums newAlbums }
-
+      json { album: album }
 
   do next

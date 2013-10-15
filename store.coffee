@@ -44,7 +44,25 @@ put = (path,getContent,next) ->
 
 # Generic file query function
 get = (path,next) ->
-  next null, null # TODO
+  obj =
+    Bucket: bucket
+    Key: prefix + '/' + path
+  S3.getObject obj, (err,data) ->
+    err = if err then error else null
+    next err, data.Body
+
+# Grab JSON data
+getJSON = (path,next) ->
+  get path, (err,data) ->
+    return next err, data if err
+    try
+      data = data.toString 'utf8'
+      console.log data
+      next err, JSON.parse data
+    catch error
+      next "Error parsing JSON", null
+
+module.exports.getJSON = getJSON
 
 # Update a value on S3
 update = (path,f,next) ->

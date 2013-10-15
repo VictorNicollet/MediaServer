@@ -17,3 +17,6 @@ register = (how) ->
 
 # Register a reaction to a POST request
 module.exports.post = register (app) -> (url, action) -> app.post url, action
+
+# Register a reaction to a GET request
+module.exports.get = register (app) -> (url, action) -> app.get url, action
