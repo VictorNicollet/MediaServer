@@ -28,7 +28,7 @@ makeAlbum = (albums,name) ->
   id: nextId albums
 
 isAdmin = (albums,email) ->
-  album.admins.indexOf email != -1
+  albums.admins.indexOf email != -1
 
 # Grab all visible albums for a given user
 grabVisibleAlbums = (albums,email) -> 
