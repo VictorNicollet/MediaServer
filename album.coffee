@@ -3,6 +3,9 @@ store = require './store'
 api = require './api'
 proof = require './proof'
 
+# You cannot have more than this number of albums
+maxAlbums = 20
+
 # The global list of albums
 defaultAlbums = 
   admins: [ "victor@nicollet.net", "alix.marcorelles@gmail.com" ]
@@ -28,7 +31,7 @@ makeAlbum = (albums,name) ->
 grabVisibleAlbums = (albums,email) -> 
   grab = (album) ->
     name: album.name
-    id: nextId albums
+    album: nextId albums
     access:
       if isAdmin then 'OWN' else
         if album.put.indexOf emailId != -1 then 'PUT' else
@@ -51,6 +54,8 @@ module.exports.install = (app,next) ->
     album = null
     update = (albums,next) ->
       albums = albums || defaultAlbums
+      if albums.length == maxAlbums
+        return next "Maximum number of albums reached", null
       name = req.body.name || "Untitled"
       album = makeAlbum albums, name
       albums.albums.push album
