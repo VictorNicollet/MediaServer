@@ -1,6 +1,7 @@
 require 'coffee-script'
 store = require './store'
 api = require './api'
+proof = require './proof'
 
 # The global list of albums
 defaultAlbums = 
@@ -17,11 +18,25 @@ nextId = (albums) ->
   id
 
 # Create a brand new album inside the specified album set
-makeAlbum = (albums,title) ->
-  title: title
+makeAlbum = (albums,name) ->
+  name: name
   get: []
   put: []
   id: nextId albums
+
+# Grab all visible albums for a given user
+grabVisibleAlbums = (albums,email) -> 
+  grab = (album) ->
+    name: album.name
+    id: nextId albums
+    access:
+      if isAdmin then 'OWN' else
+        if album.put.indexOf emailId != -1 then 'PUT' else
+          if album.get.indexOf emailid != -1 then 'GET' else ''
+  isAdmin = albums.admins.indexOf email != -1
+  emailId = albums.contacts.indexOf email
+  grabbed = (grab album for album in albums.albums)
+  (proof.make album for album in grabbed when album.access)
   
 module.exports.install = (app,next) ->
 
@@ -30,13 +45,13 @@ module.exports.install = (app,next) ->
     newAlbums = null
     update = (albums,next) ->
       newAlbums = albums || defaultAlbums
-      title = req.body.title || "Untitled"
-      album = makeAlbum newAlbums, title
+      name = req.body.name || "Untitled"
+      album = makeAlbum newAlbums, name
       newAlbums.albums.push album
       next null, newAlbums
     store.updateJSON 'albums.json', update, (err) -> 
       return fail err if err
-      json newAlbums 
+      json { albums: grabVisibleAlbums newAlbums }
 
 
   do next
