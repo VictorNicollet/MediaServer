@@ -19,8 +19,8 @@ $ ->
   navigator.id.watch
     loggedInUser: API.getUserEmail()
     onlogin: (a) ->
-      API.startSession a, paint
+      API.session.start a, paint
     onlogout: () ->
-      API.closeSession paint
+      API.session.close paint
     onready: paint
   

@@ -4,6 +4,7 @@ require "coffee-script"
 register = (how) ->
   (app,url,f) ->
     url = '/api/' + url
+    console.log "API registered: #{url}"
     reg = how app
     reg url, (req,res) ->
       json = (data,more=null) ->

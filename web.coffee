@@ -3,6 +3,7 @@ proof = require "./proof"
 statics = require "./statics"
 session = require "./session"
 seq = require "./seq"
+album = require "./album"
 express = require "express"
 
 app = do express
@@ -17,8 +18,9 @@ startApplication = (app, next) ->
 
 # All module initialization functions
 installers = [
-  statics.install,
+  album.install,
   session.install,
+  statics.install,
   startApplication
 ]
 
