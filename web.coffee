@@ -9,7 +9,8 @@ express = require "express"
 app = do express
 app.use express.bodyParser()
 app.use express.logger()
-  
+app.use express.cookieParser()
+    
 startApplication = (app, next) -> 
   port = process.env.port || 5000
   app.listen port, ->

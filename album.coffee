@@ -27,16 +27,19 @@ makeAlbum = (albums,name) ->
   put: []
   id: nextId albums
 
+isAdmin = (albums,email) ->
+  album.admins.indexOf email != -1
+
 # Grab all visible albums for a given user
 grabVisibleAlbums = (albums,email) -> 
   grab = (album) ->
     name: album.name
     album: nextId albums
     access:
-      if isAdmin then 'OWN' else
+      if admin then 'OWN' else
         if album.put.indexOf emailId != -1 then 'PUT' else
           if album.get.indexOf emailId != -1 then 'GET' else ''
-  isAdmin = albums.admins.indexOf email != -1
+  admin = isAdmin albums, email
   emailId = albums.contacts.indexOf email
   grabbed = (grab album for album in albums.albums)
   (proof.make album for album in grabbed when album.access)
@@ -47,13 +50,15 @@ module.exports.install = (app,next) ->
   api.get app, 'albums', (req, fail, json) ->
     albums = store.getJSON 'albums.json', (err,albums) ->
       return fail err if err
-      json { albums: grabVisibleAlbums albums }
+      json { albums: grabVisibleAlbums albums, req.email }
 
   # Creating a new album, returning the entire new album set
   api.post app, 'album/create', (req, fail, json) ->
     album = null
     update = (albums,next) ->
       albums = albums || defaultAlbums
+      if !isAdmin albums, req.email
+        return next "Only admins can create albums", null
       if albums.length == maxAlbums
         return next "Maximum number of albums reached", null
       name = req.body.name || "Untitled"

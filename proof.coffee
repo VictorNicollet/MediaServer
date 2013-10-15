@@ -11,9 +11,9 @@ escape = (s) -> s.replace("\n", "\\n").replace('\\','\\\\')
 hmac = (dict) ->
 
   # Filter, sort and escape the strings
-  keys = ([k, v] if k[0] != '_' && k != 'HMAC' for k, v of dict ) 
+  keys = ([k, v] for k, v of dict when k[0] != '_' && k != 'HMAC') 
   keys.sort (a,b) -> if a[0] > b[0] then 1 else if a[0] < b[0] then -1 else 0
-  keys = (escape x for x in [].concat.apply keys)
+  keys = (escape x for x in [].concat.apply [], keys)
 
   # Run the HMAC
   hash = crypto.createHmac 'sha1', key
@@ -37,6 +37,7 @@ module.exports.make = (dict,expires = 10) ->
   # Fill in the expiration date
   now = new Date
   exp = new Date(expires * 60 * 1000 + +now)
+    
   dict.expires = exp.toISOString()
 
   # Fill in the HMAC
@@ -47,7 +48,7 @@ module.exports.make = (dict,expires = 10) ->
 # If the dictionary was generated using 'make' and has not expired
 # yet, return true
 module.exports.check = (dict) -> 
-
+  
   typeof dict.HMAC == 'string' &&
     typeof dict.expires == 'string' &&
     dict.expires > (new Date).toISOString() &&
