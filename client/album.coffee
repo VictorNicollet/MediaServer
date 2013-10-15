@@ -28,7 +28,7 @@ do ->
     Route.register "/", (args,render) ->
       $page = $ "<table class='table'/>"
 
-      $newAlbum = $ "<thead><tr><td><button type='button' class='btn btn-success btn-xs pull-right'>New album</button></tr></td><thead>"
+      $newAlbum = $ "<thead><tr><td><button type='button' class='btn btn-success btn-sm pull-right'>New album</button><h2>Albums</h2></tr></td><thead>"
       $newAlbum.appendTo $page
       $newAlbum.find("button").click ->
         name = prompt "Name of the new album"
