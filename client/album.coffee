@@ -65,8 +65,11 @@ do ->
 
         $page = $ '<div/>'
 
-        $name = $('<h2/>').text(album.name)
+        $name = $('<h3/>').text(album.name)
         $name.appendTo $page
+
+        if album.access == 'OWN' || album.access == 'PUT'
+          $name.before '<p class="pull-right text-muted">Drop pictures here to upload them</p>'
 
         images = album._pics - album._deleted.length
 
