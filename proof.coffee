@@ -4,7 +4,7 @@ crypto = require "crypto"
 key = process.env.key || ''
 
 # Escape newlines as '\n' and \ as '\\'
-escape = (s) -> s.replace("\n", "\\n").replace('\\','\\\\')
+escape = (s) -> s.toString().replace("\n", "\\n").replace('\\','\\\\')
 
 # Generate a SHA1-HMAC for the provided dictionary
 # See 'make' for more information about how this happens

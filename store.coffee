@@ -57,11 +57,9 @@ getJSON = (path,next) ->
     return next err, data if err
     json = null
     try
-      data = data.toString 'utf8'
-      console.log data
+      data = data.toString 'utf8'    
       json = JSON.parse data
     catch error
-      console.log error
       return next "Error parsing JSON", null
     next null, json
     
