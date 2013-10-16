@@ -67,6 +67,7 @@ getJSON = (path,next) ->
         data = data.toString 'utf8'    
         json = JSON.parse data
       catch error
+        console.log "Could not parse: ", json
         return next "Error parsing JSON", null
     next null, json
     
@@ -93,12 +94,15 @@ updateJSON = (path,f,next) ->
     if data == null
       f null, next2
     else
-      try 
-        json = JSON.parse data
-        f json, next2
-      catch error
+      json = do ->
+        try 
+          JSON.parse data
+        catch error
+          null
+      if json == null
         next "Error parsing JSON", null
-  update path, f2, next  
+      f json, next2
+   update path, f2, next  
 
 module.exports.updateJSON = updateJSON
 
@@ -126,6 +130,27 @@ uploadFile = (prefix2,file,next) ->
           next null, md5
                      
 module.exports.uploadFile = uploadFile
+
+
+# Upload a file to S3, using its MD5 as its name
+uploadFileFromString = (prefix2,file,next) ->
+  hash = crypto.createHash 'md5'
+  hash.update file.content  
+  md5 = hash.digest 'hex'
+  obj =
+    Body: file.content
+    Key: [prefix,prefix2,md5].join '/'
+    Bucket: bucket
+    ContentType: file.type
+    ContentDisposition: "attachment; filename=#{file.name}"
+  run (done) ->
+    S3.putObject obj, (err,data) ->
+      do done
+      console.log "S3.putObject #{obj.Key}: #{err}" if err
+      return next err, null if err
+      next null, md5
+                     
+module.exports.uploadFileFromString = uploadFileFromString
 
 # Get a visitable URL, that lasts an entire day
 getUrl = (key) ->

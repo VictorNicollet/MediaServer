@@ -24,9 +24,16 @@ class Gallery
       pic.ratio = img.naturalWidth / (img.naturalHeight || 1)
       if img.naturalHeight > @maxHeight || img.naturalWidth > @maxWidth
         for f in @onLargePicture
-          f pic, (url) -> img.src = url
+          f pic, (url) ->
+            $img = $('<img/>').attr('src', url).css
+              width: img.width
+              height: img.height
+            $img.before pic.$img
+            pic.$img.remove()
+            pic.$img = $img
       do @fitAll
 
+    img.crossOrigin = 'Anonymous' # To allow canvas.getDataURL
     img.onload = onload
 
     img.src = picture.thumb

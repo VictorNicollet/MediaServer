@@ -51,15 +51,32 @@ grabVisibleAlbums = (albums,email) ->
 # The default piclist
 defaultPiclist = ->
   pics: []
-  noThumb: [] 
+  thumbs: []
+
+# Get a signed picture
+getSignedPicture = (album,piclist,i) ->
+
+  url = store.getUrl S3Key.original album, piclist.pics[i]
+  thumb = url
+  if piclist.thumbs[i] != null
+    thumb = store.getUrl S3Key.thumb album, piclist.thumbs[i]
+
+  obj =
+    picture: piclist.pics[i]
+    url: url
+    thumb: thumb
+
+  proof.make obj 
+
 
 # The S3 keys
 S3Key =
   albums: "albums.json"
   album: (album) -> "album-#{album.album}.json"
-  prefix: (album) -> "album/#{album.album}/original"
+  originalPrefix: (album) -> "album/#{album.album}/original"
   original: (album,md5) -> "album/#{album.album}/original/#{md5}"
-  thumb: (album,md5) -> "album/#{album.album}/original/#{md5}"
+  thumbPrefix: (album) -> "album/#{album.album}/thumb"
+  thumb: (album,md5) -> "album/#{album.album}/thumb/#{md5}"
         
 module.exports.install = (app,next) ->
 
@@ -97,16 +114,52 @@ module.exports.install = (app,next) ->
       return fail err if err
 
       data = data || defaultPiclist()
-
-      signed = (pic,data) ->
-        obj =
-          picture: pic
-          thumb: store.getUrl S3Key.thumb(album,pic)
-        proof.make obj 
-
-      pictures = (signed pic, data for pic in data.pics)
+      pictures = (getSignedPicture album, data, i for pic, i in data.pics)
       
       json { pictures: pictures }
+
+  # Uploading a thumbnail
+  api.post app, 'album/thumbnail', (req, fail, json) ->
+
+    album = req.body.album
+    if !album || !proof.check album || (album.access != "OWN" && album.access != "PUT") 
+      return fail "Invalid album signature." 
+
+    thumb = do ->
+      try
+        new Buffer req.body.thumb, 'base64'
+      catch error
+        null
+         
+    if !thumb
+      return fail "Missing or invalid thumbnail."
+
+    id = req.body.picture
+    if !id
+      return fail "Missing picture."
+
+    newPicture = null
+
+    file =
+      type: "image/png"
+      name: "thumb.png"
+      content: thumb
+
+    store.uploadFileFromString S3Key.thumbPrefix(album), file, (err,id2) -> 
+      return fail err if err
+
+      update = (piclist,next) ->
+        piclist = piclist || defaultPiclist()
+        pos = piclist.pics.indexOf id
+        return next "Picture not found in album.", null if pos == -1
+        piclist.thumbs[pos] = id2
+        newPicture = getSignedPicture album, piclist, pos
+        next null, piclist
+
+      store.updateJSON S3Key.album(album), update, (err) ->
+        return fail err if err
+        json { picture: newPicture }
+   
 
   # Uploading a file
   api.post app, 'album/upload', (req, fail, json) ->
@@ -124,7 +177,7 @@ module.exports.install = (app,next) ->
     if !album || !proof.check album || (album.access != "OWN" && album.access != "PUT") 
       return fail "Invalid album signature." 
 
-    store.uploadFile S3Key.prefix(album), file, (err,id) ->
+    store.uploadFile S3Key.originalPrefix(album), file, (err,id) ->
 
       return fail err if err
 
@@ -132,7 +185,7 @@ module.exports.install = (app,next) ->
         piclist = piclist || defaultPiclist()
         pos = piclist.pics.indexOf id
         return next null, piclist if pos != -1
-        piclist.noThumb.push piclist.pics.length
+        piclist.thumbs.push null
         piclist.pics.push id
         next null, piclist
         

@@ -158,6 +158,14 @@
           next data
           do end
 
+    # Set a thumbnail
+    setThumbnail: (album,picid,base64,next) ->
+      API.requests.start (end) ->
+        payload = { album: album, picture: picid, thumb: base64 }
+        API.post "album/thumbnail", payload, (data) ->
+          next data
+          do end
+
     # The URL where files should be sent
     uploadUrl: "/api/album/upload"
 

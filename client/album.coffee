@@ -49,6 +49,17 @@ do ->
         albumPicturesById[id] = contents
         next contents
 
+  # Update the cached version of a picture based on results from the server
+  updateCachedPicture = (album, picture) ->
+    id = album.album
+    if id of albumPicturesById && albumPicturesById.expires > +(new Date())
+      albumPictures = albumPicturesById[id]
+      i = 0
+      while i < albumPictures.pictures.length
+        if albumPictures.pictures[i].picture == picture.picture
+          return albumPictures.pictures[i] = picture
+      albumPictures.pictures.push picture
+  
   # Resize an image, send the thumbnail to the server
   resize = (img,picture,album,next) ->
 
@@ -56,6 +67,7 @@ do ->
     maxW = Gallery.prototype.maxWidth
     w = img.naturalWidth
     h = img.naturalHeight
+    ratio = w / h
     if w > maxW
       w = maxW
       h = w / ratio
@@ -64,11 +76,15 @@ do ->
       w = h * ratio
 
     canvas = $('<canvas>')[0]
+    canvas.width  = w
+    canvas.height = h
     ctx = canvas.getContext '2d'
     ctx.drawImage img, 0, 0, w, h
-    canvas.toBlob (blob) ->
-      
-      console.log blob    
+    base64 = canvas.toDataURL('image/png').substring 'data:image/png;base64,'.length 
+
+    API.album.setThumbnail album, picture.picture, base64, (newPicture) ->
+      updateCachedPicture album.album, newPicture
+      next newPicture  
 
   # ==============================================================================
   # Controller functions
@@ -124,6 +140,6 @@ do ->
                 setUrl result.thumb
               
             for picture in pics.pictures
-              gal.addPicture picture.thumb
+              gal.addPicture picture
               
         render $page
