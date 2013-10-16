@@ -26,9 +26,6 @@ makeAlbum = (albums,name) ->
   get: []
   put: []
   id: nextId albums
-  pics: 0
-  previews: 0
-  deleted: []
 
 isAdmin = (albums,email) ->
   albums.admins.indexOf email != -1
@@ -38,9 +35,6 @@ grabVisibleAlbums = (albums,email) ->
   grab = (album) ->
     name: album.name || "Untitled"
     album: album.id
-    _pics: album.pics || 0
-    _previews: album.previews || 0
-    _deleted: album.deleted || []
     access:
       if admin then 'OWN' else
         if album.put.indexOf emailId != -1 then 'PUT' else

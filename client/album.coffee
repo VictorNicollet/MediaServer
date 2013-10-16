@@ -71,24 +71,6 @@ do ->
         if album.access == 'OWN' || album.access == 'PUT'
           $name.before '<p class="pull-right text-muted">Drop pictures here to upload them</p>'
 
-        images = album._pics - album._deleted.length
-
-        if images > 0
-
-          i = 0
-        
-          divs = while i++ < images
-            [ "<div class='col-md-3'><a href='/album/",album.album,"/",i-1,
-              "'><img id='pic-",album.album,"-",i-1,
-              "' style='height:100%;width:100%'/></a></div>" ]
-
-          html = [].concat.apply([], divs).join("")
-
-          $page.append(html)   
-
-        else
-
-          $page.append("<div class='well empty'>No pictures in this album</div>")
-
+        $page.append("<div class='well empty'>No pictures in this album</div>")
 
         render $page
