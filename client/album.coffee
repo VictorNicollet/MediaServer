@@ -9,6 +9,9 @@ do ->
   # A cache of all album proofs by identifier
   albumById = {}
 
+  # Contents of each album, by identifier, with expiration date
+  albumPicturesById = {}
+
   # Load all albums
   loadAll = (next) ->
     API.album.all (list) ->
@@ -34,6 +37,17 @@ do ->
       return next null if !reload
       loadAll ->
         get id, next, false
+
+  # Get the contents of an album
+  getPictures = (id,next) ->
+    if id of albumPicturesById && albumPicturesById.expires > +(new Date())
+      next albumPicturesById[id]
+    get id, (album) ->
+      API.album.pictures album, (contents) -> 
+        now = new Date()
+        contents.expires = new Date(+now + 1000 * 600) # 10 minutes
+        albumPicturesById[id] = contents
+        next contents
 
   # ==============================================================================
   # Controller functions
@@ -73,7 +87,12 @@ do ->
           Picture.onDropFile = (f) ->
             Picture.upload f, album, (id) ->
               console.log "File uploaded: %s = %o", id, f 
-            
-        $page.append("<div class='well empty'>No pictures in this album</div>")
 
+        getPictures album.album, (pics) ->
+          if pics.pictures.length == 0
+            $page.append("<div class='well empty'>No pictures in this album</div>")
+          else
+            for picture in pics.pictures
+              $page.append($("<div/>").text(picture.picture))
+              
         render $page

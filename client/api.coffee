@@ -115,7 +115,7 @@
     process: ->
       r = API.requests
       if r.queue.length > 0
-        r.queue.shift()(next)
+        r.queue.shift()(API.requests.process)
         r.isRunning = true
       else
         r.isRunning = false
@@ -149,6 +149,13 @@
       API.requests.start (end) ->
         API.get "albums", {}, (data) ->
           next data.albums
+          do end
+
+    # Returns the list of pictures in an album
+    pictures: (album,next) ->
+      API.requests.start (end) ->
+        API.post "album/pictures", { album: album }, (data) ->
+          next data
           do end
 
     # The URL where files should be sent

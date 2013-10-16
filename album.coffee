@@ -56,7 +56,7 @@ defaultPiclist = ->
 # The S3 keys
 S3Key =
   albums: "albums.json"
-  album: (album) -> "album-#{album.album}"
+  album: (album) -> "album-#{album.album}.json"
   
 module.exports.install = (app,next) ->
 
@@ -83,6 +83,28 @@ module.exports.install = (app,next) ->
       return fail err if err
       json { album: album }
 
+  # Return the list of all pictures in an album
+  api.post app, 'album/pictures', (req, fail, json) ->
+
+    album = req.body.album
+    if !album || !proof.check album
+      return fail "Invalid album signature."
+
+    store.getJSON S3Key.album(album), (err,data) ->
+      return fail err if err
+
+      data = data || defaultPiclist()
+
+      signed = (pic,data) ->
+        obj =
+          picture: pic
+          thumb: data.noThumb.indexOf pic == -1
+        proof.make obj 
+
+      pictures = (signed pic, data for pic in data.pics)
+      
+      json { pictures: pictures }
+
   # Uploading a file
   api.post app, 'album/upload', (req, fail, json) ->
 
@@ -99,13 +121,14 @@ module.exports.install = (app,next) ->
     if !album || !proof.check album || (album.access != "OWN" && album.access != "PUT") 
       return fail "Invalid album signature." 
 
-    store.uploadFile "album/#{album.album}/original/", file, (err,id) ->
+    store.uploadFile "album/#{album.album}/original", file, (err,id) ->
 
       return fail err if err
 
       update = (piclist,next) ->
         piclist = piclist || defaultPiclist()
-        return next null, piclist if piclist.pics.indexOf id != -1  
+        pos = piclist.pics.indexOf id
+        return next null, piclist if pos != -1
         piclist.noThumb.push piclist.pics.length
         piclist.pics.push id
         next null, piclist

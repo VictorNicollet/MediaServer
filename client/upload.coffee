@@ -34,7 +34,6 @@
     else
       $p.slideDown 'fast'
 
-
   # Hide the progress bar
   hide: ->
     do $('#progress').hide

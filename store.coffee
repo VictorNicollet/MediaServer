@@ -62,11 +62,12 @@ getJSON = (path,next) ->
   get path, (err,data) ->
     return next err, data if err
     json = null
-    try
-      data = data.toString 'utf8'    
-      json = JSON.parse data
-    catch error
-      return next "Error parsing JSON", null
+    if data != null
+      try
+        data = data.toString 'utf8'    
+        json = JSON.parse data
+      catch error
+        return next "Error parsing JSON", null
     next null, json
     
 module.exports.getJSON = getJSON
