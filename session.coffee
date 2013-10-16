@@ -29,6 +29,7 @@ api.setSessionHandler (req, res, action) ->
     res.send JSON.stringify { error: "Not logged in", requiresLogin: true }
 
   try
+    console.log req.cookies
     cookie = req.cookies[cookieName]
     cookie = JSON.parse cookie
     return noSession() if !proof.check cookie
