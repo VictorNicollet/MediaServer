@@ -1,6 +1,11 @@
 # Routing based on the page URL
 @Route =
 
+  # Functions in this array are called every time the page changes,
+  # right after the old page is cleared but before the new page is
+  # displayed
+  onChange: [],
+
   # All the registered routes. Each is a function that returns true
   # if it matches, false otherwise.
   routes: [],
@@ -16,9 +21,9 @@
     # Running a route clears anything that was running on the
     # old route
     run = (action, args) ->
-      do API.requests.clear
       $c = $ '#container'    
       $c.html ''
+      do change for change in Route.onChange
       action args, (html) -> $c.html html
       
     Route.routes.push (realpath) ->

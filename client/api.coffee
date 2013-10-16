@@ -70,7 +70,7 @@
     catch err
       null
 
-  # ================================================================================
+  # =======================
   # Session-related actions
   session:
 
@@ -88,7 +88,7 @@
         do API.requests.process if !API.requests.isRunning
         do next
 
-  # ================================================================================
+  # ==========================================================
   # Request-related operations. Everything in here is private.
   requests:
     
@@ -123,8 +123,8 @@
         r.isRunning = true
         req r.process
 
-  # ==============================================================================
-  # Albums
+  # ===================================
+  # Albums and album content management
   album:
 
     # Create a new album with the provided name, available only to myself.
@@ -141,3 +141,10 @@
         API.get "albums", {}, (data) ->
           next data.albums
           do end
+
+# =====================
+# Cross-module bindings
+
+$ ->
+  Route.onChange.push API.requests.clear
+  
