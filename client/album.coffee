@@ -92,7 +92,9 @@ do ->
           if pics.pictures.length == 0
             $page.append("<div class='well empty'>No pictures in this album</div>")
           else
+            $target = $("<div class='row'/>").appendTo $page
+            gal = new Gallery($target)
             for picture in pics.pictures
-              $page.append($("<img/>").attr("src", picture.thumb))
+              gal.addPicture picture.thumb
               
         render $page
