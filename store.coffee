@@ -126,3 +126,10 @@ uploadFile = (prefix2,file,next) ->
           next null, md5
                      
 module.exports.uploadFile = uploadFile
+
+# Get a visitable URL, that lasts an entire day
+getUrl = (key) ->
+  obj =
+    Bucket: bucket
+    Key: prefix + "/" + key
+  S3.getSignedUrl 'getObject', obj

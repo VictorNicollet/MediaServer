@@ -93,6 +93,6 @@ do ->
             $page.append("<div class='well empty'>No pictures in this album</div>")
           else
             for picture in pics.pictures
-              $page.append($("<div/>").text(picture.picture))
+              $page.append($("<img/>").attr("src", picture.thumb))
               
         render $page

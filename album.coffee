@@ -57,7 +57,10 @@ defaultPiclist = ->
 S3Key =
   albums: "albums.json"
   album: (album) -> "album-#{album.album}.json"
-  
+  prefix: (album) -> "album/#{album.album}/original"
+  original: (album,md5) -> "album/#{album.album}/original/#{md5}"
+  thumb: (album,md5) -> "album/#{album.album}/original/#{md5}"
+        
 module.exports.install = (app,next) ->
 
   # Return the list of all available albums
@@ -98,7 +101,7 @@ module.exports.install = (app,next) ->
       signed = (pic,data) ->
         obj =
           picture: pic
-          thumb: data.noThumb.indexOf pic == -1
+          thumb: store.getUrl S3Key.thumb(album,pic)
         proof.make obj 
 
       pictures = (signed pic, data for pic in data.pics)
@@ -121,7 +124,7 @@ module.exports.install = (app,next) ->
     if !album || !proof.check album || (album.access != "OWN" && album.access != "PUT") 
       return fail "Invalid album signature." 
 
-    store.uploadFile "album/#{album.album}/original", file, (err,id) ->
+    store.uploadFile S3Key.prefix(album), file, (err,id) ->
 
       return fail err if err
 
