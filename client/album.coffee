@@ -71,7 +71,7 @@ do ->
         if album.access == 'OWN' || album.access == 'PUT'
           $name.before '<p class="pull-right text-muted">Drop pictures here to upload them</p>'
           Picture.onDropFile = (f) ->
-            console.log "Uploaded file: %s", f
+            console.log "Uploaded file: %o", f
 
         $page.append("<div class='well empty'>No pictures in this album</div>")
 
