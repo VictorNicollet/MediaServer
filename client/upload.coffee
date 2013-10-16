@@ -35,6 +35,10 @@
       $p.find('.progress-bar').css({"width":(p*100).toFixed(2) + '%'})
 
 
+  # Hide the progress bar
+  hide: ->
+    do $('#progress').hide
+
   # Add an item to the queue
   add: (task) ->
     Upload.queue.push task
@@ -52,3 +56,63 @@
           do Upload.run
     Upload.isRunning = false
     
+  # Actually send data out. Returns an uploader object with a wait
+  # method that waits for progress. During actual upload, progress
+  # changes from 0 to 1. When the http response arrives, progress
+  # moves to 2 and 'next' is called with the response from the server.
+  send: (file, url, payload, next) -> 
+
+    # The uploader object
+    finished = false
+    onProgress = []
+    progress = (p) ->
+      f p for f in onProgress
+      onProgress = []
+
+    uploader =
+      wait: (next) ->
+        return next 2 if finished
+        onProgress.push next          
+
+    # Build the request
+    xhr = new XMLHttpRequest()
+    xhr.open 'POST', url
+
+    if 'upload' of xhr
+      xhr.upload.onprogress = (e) ->
+        if e.lengthComputable
+          progress(e.loaded / e.total || 0)
+                                      
+    xhr.onload = ->
+      finished = true
+      progress 2
+
+      text = xhr.responseText
+      return API.error "Upload failed." if !text
+      
+      json = do ->
+        try
+          JSON.parse text
+        catch error
+          null
+      return API.error "Upload failed." if !json
+      return do API.loginRequest if json.requiresLogin
+      return API.error json.error if json.error
+
+      id = json.id
+      return API.error "Upload failed." if !id
+      next id 
+
+    # Send the request
+    flatten = (s) -> if typeof s == 'string' then s else JSON.stringify s
+    fd = new FormData()
+    fd.append 'file', file
+    fd.append key, flatten value for key, value of payload
+    xhr.send fd
+
+    # Return the uploader
+    uploader  
+        
+$ ->
+  API.onFailure.push Upload.hide
+  

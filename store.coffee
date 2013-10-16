@@ -1,5 +1,6 @@
 require 'coffee-script'
 AWS = require 'aws-sdk'
+crypto = require 'crypto'
 
 # Configuration
 bucket = 'pics.nicollet.net'
@@ -93,3 +94,28 @@ updateJSON = (path,f,next) ->
   update path, f2, next  
 
 module.exports.updateJSON = updateJSON
+
+# Upload a file to S3, using its MD5 as its name
+uploadFile = (prefix2,file,next) ->
+  hash = crypto.createHash 'md5'
+  s = fs.createReadStream file.path   
+  s.on 'error', -> next "Error reading downloaded file", null
+  s.on 'data', (d) -> hash.update d
+  s.on 'end', ->
+    fs.readFile file.path, (err,buffer) ->
+      return next err, null if err 
+      md5 = hash.digest 'hex'
+      obj =
+        Body: buffer
+        Key: [prefix,prefix2,md5].join '/'
+        Bucket: bucket
+        ContentMD5: md5
+        ContentType: file.type
+        ContentDisposition: "attachment; filename=#{file.name}"
+      run (done) ->
+        S3.putObject obj, (err,data) ->
+          do done
+          return next err, null if err
+          next null, md5
+                     
+module.exports.uploadFile = uploadFile

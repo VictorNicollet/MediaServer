@@ -6,6 +6,9 @@ proof = require './proof'
 # You cannot have more than this number of albums
 maxAlbums = 50
 
+# You cannot have more than this number of pictures in an album
+maxPictures = 250
+
 # The global list of albums
 defaultAlbums = ->
   admins: [ "victor@nicollet.net", "alix.marcorelles@gmail.com" ]
@@ -27,6 +30,7 @@ makeAlbum = (albums,name) ->
   put: []
   id: nextId albums
 
+# Is a given email the administrator of an album set ?
 isAdmin = (albums,email) ->
   albums.admins.indexOf email != -1
 
@@ -43,12 +47,22 @@ grabVisibleAlbums = (albums,email) ->
   emailId = albums.contacts.indexOf email
   grabbed = (grab album for album in albums.albums)
   (proof.make album for album in grabbed when album.access)
+
+# The default piclist
+defaultPiclist = ->
+  pics: []
+  noThumb: [] 
+
+# The S3 keys
+S3Key =
+  albums: "albums.json"
+  album: (album) -> "album-#{album.album}"
   
 module.exports.install = (app,next) ->
 
   # Return the list of all available albums
   api.get app, 'albums', (req, fail, json) ->
-    albums = store.getJSON 'albums.json', (err,albums) ->
+    albums = store.getJSON S3Key.albums, (err,albums) ->
       return fail err if err
       json { albums: grabVisibleAlbums albums, req.email }
 
@@ -65,8 +79,37 @@ module.exports.install = (app,next) ->
       album = makeAlbum albums, name
       albums.albums.push album
       next null, albums
-    store.updateJSON 'albums.json', update, (err) -> 
+    store.updateJSON S3Keys.albums, update, (err) -> 
       return fail err if err
       json { album: album }
 
+  # Uploading a file
+  api.post app, 'album/upload', (req, fail, json) ->
+
+    file = req.files.file
+    if !file
+      return fail "No picture provided."
+
+    album = do ->
+      try
+        JSON.parse req.body.album
+      catch error
+        null
+      
+    if !album || !proof.check album || (album.access != "OWN" && album.access != "PUT") 
+      return fail "Invalid album signature." 
+
+    store.uploadFile "album/#{album.album}/original/", file, (id) ->
+
+      update = (piclist,next) ->
+        piclist = piclist || defaultPiclist()
+        return next piclist if piclist.pics.indexOf id != -1  
+        piclist.noThumb.push piclist.pics.length
+        piclist.pics.push id
+        next piclist
+        
+      store.updateJSON S3Key.album(album), update, (err) ->
+        return fail err if err
+        json { id: id }
+      
   do next

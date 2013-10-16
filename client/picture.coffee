@@ -5,6 +5,21 @@
   # This function is called when a file is dropped on the window.
   onDropFile: null
 
+  # Start uploading a file to an album
+  upload: (file,album,next) -> 
+    Upload.add
+      done: 0
+      size: 2
+      run: (end) ->
+        if !@uploader
+          @uploader = Upload.send file, API.album.uploadUrl, { album: album }, (d) ->
+            next d.id
+          do end
+        else    
+          @uploader.wait (s) ->
+            @done = s if s < @done
+            do end
+
 $ ->
 
   $b = $ 'body'
