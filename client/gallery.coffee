@@ -1,11 +1,10 @@
 class Gallery
 
-  pictures: []
-  next: 0
-
   constructor: (@$target,@gap=10) ->
     @width = @$target.width()
-    
+    @pictures = []
+    @next = 0
+
   addPicture: (url) ->
 
     img = document.createElement 'img'
