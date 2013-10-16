@@ -49,7 +49,8 @@ get = (path,next) ->
     Key: prefix + '/' + path
   S3.getObject obj, (err,data) ->
     err = if err then error else null
-    next err, data.Body
+    data = if data == null then null else data.Body
+    next err, data
 
 # Grab JSON data
 getJSON = (path,next) ->
