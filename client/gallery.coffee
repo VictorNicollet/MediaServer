@@ -17,8 +17,9 @@ class Gallery
       proof: picture
       $img: $ img
     
+    unfit = @pictures.length
     @pictures.push pic
-    
+
     onload = =>
       pic.loaded = true
       pic.ratio = img.naturalWidth / (img.naturalHeight || 1)
@@ -31,7 +32,7 @@ class Gallery
             $img.insertBefore pic.$img
             pic.$img.remove()
             pic.$img = $img
-      do @fitAll
+      @unfit unfit
 
     img.crossOrigin = 'Anonymous' # To allow canvas.getDataURL
     img.onload = onload
@@ -69,6 +70,21 @@ class Gallery
     return null if oldHeight == 0
     return [oldHeight,oldCount]
 
+  # Unfit all elements after the specified one (including the last one's line)
+  unfit: (pos) ->
+    if @next >= pos
+      $lines = @$target.children()
+      next = 0
+      for line in $lines
+        $line = $ line
+        images = $line.find('img').length
+        if next + images >= pos
+          $line.remove()
+        else
+          next += images
+      @next = next
+    do @fitAll
+    
   # Repeatedly fit and render elements
   fitAll: -> 
 
@@ -81,6 +97,7 @@ class Gallery
     $line = $('<div/>').css
       overflow: "hidden"
       height: height
+      display: "none"
       marginBottom: @gap
 
     $line.appendTo @$target
@@ -96,9 +113,8 @@ class Gallery
         float: "left"
         height: height
         width: height * pic.ratio
-        display: "none"
         marginRight: if count == 0 then 0 else @gap
       pic.$img.appendTo $line
-      appearRandom pic.$img
+      appearRandom $line
       
     do @fitAll    
