@@ -83,8 +83,8 @@ do ->
     base64 = canvas.toDataURL('image/png').substring 'data:image/png;base64,'.length 
 
     API.album.setThumbnail album, picture.picture, base64, (newPicture) ->
-      updateCachedPicture album.album, newPicture
-      next newPicture  
+      updateCachedPicture album.album, newPicture.picture
+      next newPicture.picture  
 
   # ==============================================================================
   # Controller functions
@@ -125,21 +125,35 @@ do ->
             Picture.upload f, album, (id) ->
               console.log "File uploaded: %s = %o", id, f 
 
-        getPictures album.album, (pics) ->
-          if pics.pictures.length == 0
-
-            $page.append("<div class='well empty'>No pictures in this album</div>")
-
-          else
-
-            $target = $("<div class='row'/>").appendTo $page
-
-            gal = new Gallery($target)
+        getTheGallery = ->
+          $('#empty').remove() 
+          $t = $('#gallery')
+          if $t.length == 0
+            $t = $("<div id=gallery class='row'/>").appendTo $page
+            gal = new Gallery($t)
             gal.onLargePicture.push (pic,setUrl) ->
               resize pic.$img[0], pic.proof, album, (result) ->
                 setUrl result.thumb
-              
+            $t.data 'gallery', gal    
+            gal
+          else
+            $t.data 'gallery'
+
+        getPictures album.album, (pics) ->
+
+          if pics.pictures.length == 0
+
+            $page.append("<div id=empty class='well empty'>No pictures in this album</div>")
+
+          else
+
+            gal = getTheGallery()              
             for picture in pics.pictures
               gal.addPicture picture
-              
+
+          Picture.onUploadFinished.push (album2,picture) ->
+            return if album2.album != album.album
+            gal = getTheGallery()
+            gal.addPicture picture
+                      
         render $page

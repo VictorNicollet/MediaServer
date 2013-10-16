@@ -28,7 +28,7 @@ class Gallery
             $img = $('<img/>').attr('src', url).css
               width: img.width
               height: img.height
-            $img.before pic.$img
+            $img.insertBefore pic.$img
             pic.$img.remove()
             pic.$img = $img
       do @fitAll

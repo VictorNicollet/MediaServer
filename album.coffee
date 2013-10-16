@@ -181,16 +181,19 @@ module.exports.install = (app,next) ->
 
       return fail err if err
 
+      thePicture = null
+
       update = (piclist,next) ->
         piclist = piclist || defaultPiclist()
         pos = piclist.pics.indexOf id
         return next null, piclist if pos != -1
         piclist.thumbs.push null
         piclist.pics.push id
+        thePicture = getSignedPicture album, piclist, piclist.pics.length - 1
         next null, piclist
         
       store.updateJSON S3Key.album(album), update, (err) ->
         return fail err if err
-        json { id: id }
+        json { picture: thePicture }
       
   do next

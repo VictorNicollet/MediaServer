@@ -5,6 +5,10 @@
   # This function is called when a file is dropped on the window.
   onDropFile: null
 
+  # These functions are called when a file finishes uploading, with the
+  # album and the new picture
+  onUploadFinished: []
+
   # Start uploading a file to an album
   upload: (file,album,next) -> 
     Upload.add
@@ -14,7 +18,9 @@
         if !@uploader
           @uploader = Upload.send file, API.album.uploadUrl, { album: album }, (d) ->
             console.log d
-            next d.id
+            next d.picture.picture
+            for f in Picture.onUploadFinished
+              f album, d.picture
           do end
         else    
           @uploader.wait (s) =>
@@ -40,5 +46,6 @@ $ ->
     Picture.onDropFile file for file in e.dataTransfer.files
     false
     
-  Route.onChange.push -> Picture.onDropFile = null
-  
+  Route.onChange.push ->
+    Picture.onDropFile = null
+    Picture.onUploadFinished = []
