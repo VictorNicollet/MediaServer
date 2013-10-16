@@ -49,6 +49,27 @@ do ->
         albumPicturesById[id] = contents
         next contents
 
+  # Resize an image, send the thumbnail to the server
+  resize = (img,picture,album,next) ->
+
+    maxH = Gallery.prototype.maxHeight
+    maxW = Gallery.prototype.maxWidth
+    w = img.naturalWidth
+    h = img.naturalHeight
+    if w > maxW
+      w = maxW
+      h = w / ratio
+    if h > maxH
+      h = maxH
+      w = h * ratio
+
+    canvas = $('<canvas>')[0]
+    ctx = canvas.getContext '2d'
+    ctx.drawImage img, 0, 0, w, h
+    canvas.toBlob (blob) ->
+      
+      console.log blob    
+
   # ==============================================================================
   # Controller functions
   $ ->
@@ -90,10 +111,18 @@ do ->
 
         getPictures album.album, (pics) ->
           if pics.pictures.length == 0
+
             $page.append("<div class='well empty'>No pictures in this album</div>")
+
           else
+
             $target = $("<div class='row'/>").appendTo $page
+
             gal = new Gallery($target)
+            gal.onLargePicture.push (pic,setUrl) ->
+              resize pic.$img[0], pic.proof, album, (result) ->
+                setUrl result.thumb
+              
             for picture in pics.pictures
               gal.addPicture picture.thumb
               

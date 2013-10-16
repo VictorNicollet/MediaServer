@@ -1,15 +1,20 @@
 class Gallery
 
+  maxHeight: 360
+  maxWidth: 1024
+
   constructor: (@$target,@gap=10) ->
     @width = @$target.width()
     @pictures = []
     @next = 0
+    @onLargePicture = []
 
-  addPicture: (url) ->
+  addPicture: (picture) ->
 
     img = document.createElement 'img'
 
     pic =
+      proof: picture
       $img: $ img
     
     @pictures.push pic
@@ -17,11 +22,14 @@ class Gallery
     onload = =>
       pic.loaded = true
       pic.ratio = img.naturalWidth / (img.naturalHeight || 1)
+      if img.naturalHeight > @maxHeight || img.naturalWidth > @maxWidth
+        for f in @onLargePicture
+          f pic, (url) -> img.src = url
       do @fitAll
 
     img.onload = onload
 
-    img.src = url
+    img.src = picture.thumb
 
     null
 
@@ -34,7 +42,6 @@ class Gallery
     # so H = (W - |pictures| * gap) / sum(ratios)
 
     minHeight = 180
-    maxHeight = 360
     oldHeight = 0
     oldCount  = 0
     count = 0
@@ -49,9 +56,9 @@ class Gallery
       if height >= minHeight || oldHeight == 0
         oldHeight = height
         oldCount  = count 
-      break if height < minHeight && oldHeight <= maxHeight
+      break if height < minHeight && oldHeight <= @maxHeight
 
-    oldHeight = maxHeight if oldHeight > maxHeight
+    oldHeight = @maxHeight if oldHeight > @maxHeight
     return null if oldHeight == 0
     return [oldHeight,oldCount]
 
