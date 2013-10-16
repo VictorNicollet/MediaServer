@@ -7,7 +7,7 @@ proof = require './proof'
 maxAlbums = 50
 
 # The global list of albums
-defaultAlbums = 
+defaultAlbums = ->
   admins: [ "victor@nicollet.net", "alix.marcorelles@gmail.com" ]
   contacts: []
   albums: []
@@ -56,7 +56,7 @@ module.exports.install = (app,next) ->
   api.post app, 'album/create', (req, fail, json) ->
     album = null
     update = (albums,next) ->
-      albums = albums || defaultAlbums
+      albums = albums || defaultAlbums()
       if !isAdmin albums, req.email
         return next "Only admins can create albums", null
       if albums.length == maxAlbums

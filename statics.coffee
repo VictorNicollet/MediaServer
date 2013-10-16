@@ -1,4 +1,4 @@
-require "coffee-script"
+coffeescript = require "coffee-script"
 fs = require "fs"
 child = require "child_process"
 seq = require "./seq"
@@ -30,15 +30,31 @@ module.exports.install = (app, next) ->
           content.push css
           do next
       fs.readdir cssSource, (err,files) ->
+        files = (file for file in files when /.css$/.test file)
         seq.iter read, files, ->
           serve app, "/app.css", content.join("\n"), "text/css"
           do next
 
     # Client coffeescript is compiled
     (next) ->
-      child.exec command, (err,appJs) ->
+      content = []
+
+      read = (file, next) ->
+        file = coffeeSource + "/" + file
+        fs.readFile file, "utf8", (err,coffee) ->
+          console.log "Include Coffeescript: ", file
+          content.push coffee
+          do next
+
+      compile = -> 
+        appJs = coffeescript.compile content.join ''
         serve app, "/app.js", appJs, "application/javascript"
         do next
+
+      fs.readdir coffeeSource, (err,files) ->
+        files = (file for file in files when /.coffee$/.test file)
+        seq.iter read, files, ->
+          do compile
 
     # Index HTML is compiled as-is
     (next) -> 
