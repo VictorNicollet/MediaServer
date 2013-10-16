@@ -80,7 +80,7 @@ do ->
     canvas.height = h
     ctx = canvas.getContext '2d'
     ctx.drawImage img, 0, 0, w, h
-    base64 = canvas.toDataURL('image/png').substring 'data:image/png;base64,'.length 
+    base64 = canvas.toDataURL('image/jpeg').substring 'data:image/jpeg;base64,'.length 
 
     API.album.setThumbnail album, picture.picture, base64, (newPicture) ->
       updateCachedPicture album.album, newPicture.picture

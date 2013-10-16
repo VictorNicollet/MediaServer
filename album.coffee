@@ -141,8 +141,8 @@ module.exports.install = (app,next) ->
     newPicture = null
 
     file =
-      type: "image/png"
-      name: "thumb.png"
+      type: "image/jpeg"
+      name: "thumb.jpg"
       content: thumb
 
     store.uploadFileFromString S3Key.thumbPrefix(album), file, (err,id2) -> 

@@ -2,12 +2,14 @@ class Gallery
 
   maxHeight: 360
   maxWidth: 1024
+  maxPending: 2
 
   constructor: (@$target,@gap=10) ->
     @width = @$target.width()
     @pictures = []
     @next = 0
     @onLargePicture = []
+    @pending = 0
 
   addPicture: (picture) ->
 
@@ -15,12 +17,14 @@ class Gallery
 
     pic =
       proof: picture
+      started: false
       $img: $ img
     
     unfit = @pictures.length
     @pictures.push pic
 
     onload = =>
+      --@pending
       pic.loaded = true
       pic.ratio = img.naturalWidth / (img.naturalHeight || 1)
       if img.naturalHeight > @maxHeight || img.naturalWidth > @maxWidth
@@ -33,14 +37,24 @@ class Gallery
             pic.$img.remove()
             pic.$img = $img
       @unfit unfit
+      do @start
 
     img.crossOrigin = 'Anonymous' # To allow canvas.getDataURL
     img.onload = onload
 
-    img.src = picture.thumb
+    do @start
 
     null
 
+  # Start loading a new image
+  start: ->
+    for picture in @pictures
+      continue if picture.started
+      return if @pending >= @maxPending
+      picture.started = true
+      picture.$img[0].src = picture.proof.thumb
+      ++@pending
+      
   # Get the optimum height starting at 'next' and grabbing as many
   # elements as possible. Returns the number of grabbed elements 
   fit: ->
