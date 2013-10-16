@@ -133,3 +133,5 @@ getUrl = (key) ->
     Bucket: bucket
     Key: prefix + "/" + key
   S3.getSignedUrl 'getObject', obj
+
+module.exports.getUrl = getUrl
