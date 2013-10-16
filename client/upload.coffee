@@ -28,11 +28,11 @@
         '<div class="progress-bar" role="progressbar"/></div></div>'
       $p.insertBefore('#container')
     p = Upload.currentProgress()
+    $p.find('.progress-bar').css({"width":(p*100).toFixed(2) + '%'})
     if p == 1
-      $p.hide 'fast'
+      $p.slideUp 'slow'
     else
-      $p.show 'fast'
-      $p.find('.progress-bar').css({"width":(p*100).toFixed(2) + '%'})
+      $p.slideDown 'fast'
 
 
   # Hide the progress bar
@@ -53,7 +53,7 @@
       if task.done < task.size
         return task.run ->
           Upload.isRunning = false
-          do Upload.run
+          setTimeout Upload.run 250
     Upload.isRunning = false
     
   # Actually send data out. Returns an uploader object with a wait
@@ -66,8 +66,9 @@
     finished = false
     onProgress = []
     progress = (p) ->
-      f p for f in onProgress
+      old = onProgress
       onProgress = []
+      f p for f in old
 
     uploader =
       wait: (next) ->
@@ -99,9 +100,7 @@
       return do API.loginRequest if json.requiresLogin
       return API.error json.error if json.error
 
-      id = json.id
-      return API.error "Upload failed." if !id
-      next id 
+      next json
 
     # Send the request
     flatten = (s) -> if typeof s == 'string' then s else JSON.stringify s

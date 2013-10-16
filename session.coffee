@@ -29,16 +29,16 @@ api.setSessionHandler (req, res, action) ->
     res.send JSON.stringify { error: "Not logged in", requiresLogin: true }
 
   try
-    console.log req.cookies
     cookie = req.cookies[cookieName]
     cookie = JSON.parse cookie
     return noSession() if !proof.check cookie
     req.email = cookie.email
     setCookie(cookie.email)(res)
-    action req, res
   catch error
     console.log error
     return noSession()
+
+  action req, res
 
 
 # Install the session module

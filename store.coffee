@@ -1,6 +1,7 @@
 require 'coffee-script'
 AWS = require 'aws-sdk'
 crypto = require 'crypto'
+fs = require 'fs'
 
 # Configuration
 bucket = 'pics.nicollet.net'
@@ -41,6 +42,7 @@ put = (path,getContent,next) ->
         Body: content
       S3.putObject obj, (err,data) ->
         do done
+        console.log "S3.putObject #{obj.Key}: #{err}" if err 
         next(if err then error else null)
 
 # Generic file query function
@@ -49,7 +51,9 @@ get = (path,next) ->
     Bucket: bucket
     Key: prefix + '/' + path
   S3.getObject obj, (err,data) ->
-    err = if err then error else null
+    err = null if /^NoSuchKey/.test err
+    console.log "S3.getObject #{obj.Key}: #{err}" if err
+    err = error if err
     data = if data == null then null else data.Body
     next err, data
 
@@ -81,6 +85,8 @@ module.exports.update = update
 updateJSON = (path,f,next) ->
   f2 = (data,next) ->
     next2 = (err,json) ->
+      if typeof json == 'undefined'
+        throw "Updater should always return both error and json"
       return next err, null if err
       next null, JSON.stringify json
     if data == null
@@ -109,12 +115,12 @@ uploadFile = (prefix2,file,next) ->
         Body: buffer
         Key: [prefix,prefix2,md5].join '/'
         Bucket: bucket
-        ContentMD5: md5
         ContentType: file.type
         ContentDisposition: "attachment; filename=#{file.name}"
       run (done) ->
         S3.putObject obj, (err,data) ->
           do done
+          console.log "S3.putObject #{obj.Key}: #{err}" if err
           return next err, null if err
           next null, md5
                      

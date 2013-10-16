@@ -99,14 +99,16 @@ module.exports.install = (app,next) ->
     if !album || !proof.check album || (album.access != "OWN" && album.access != "PUT") 
       return fail "Invalid album signature." 
 
-    store.uploadFile "album/#{album.album}/original/", file, (id) ->
+    store.uploadFile "album/#{album.album}/original/", file, (err,id) ->
+
+      return fail err if err
 
       update = (piclist,next) ->
         piclist = piclist || defaultPiclist()
-        return next piclist if piclist.pics.indexOf id != -1  
+        return next null, piclist if piclist.pics.indexOf id != -1  
         piclist.noThumb.push piclist.pics.length
         piclist.pics.push id
-        next piclist
+        next null, piclist
         
       store.updateJSON S3Key.album(album), update, (err) ->
         return fail err if err

@@ -13,11 +13,12 @@
       run: (end) ->
         if !@uploader
           @uploader = Upload.send file, API.album.uploadUrl, { album: album }, (d) ->
+            console.log d
             next d.id
           do end
         else    
-          @uploader.wait (s) ->
-            @done = s if s < @done
+          @uploader.wait (s) =>
+            @done = s if s > @done
             do end
 
 $ ->

@@ -72,7 +72,7 @@ do ->
           $name.before '<p class="pull-right text-muted">Drop pictures here to upload them</p>'
           Picture.onDropFile = (f) ->
             Picture.upload f, album, (id) ->
-              console.log "File uploaded: %s = %o", id, file 
+              console.log "File uploaded: %s = %o", id, f 
             
         $page.append("<div class='well empty'>No pictures in this album</div>")
 
