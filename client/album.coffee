@@ -18,6 +18,8 @@ do ->
       albumById[album.album] = album for album in list        
       next list
 
+   
+
   # Create a new album and returns its id and proof.
   create = (name,next) ->
     API.album.create name, (album) ->
@@ -90,6 +92,7 @@ do ->
   # Controller functions
   $ ->
 
+    # Display the list of albums
     Route.register "/", (args,render) ->
       $page = $ "<table class='table'/>"
 
@@ -104,13 +107,25 @@ do ->
       $list = $ "<tbody/>"      
       $list.appendTo $page
       loadAll (list) ->
+        isAdmin = false
         for album in list
           $link = $ "<tr><td><a/></td></tr>"
           $link.find("a").attr("href","/album/"+album.album).text(album.name)
           $link.appendTo $list
+          isAdmin = album.access == "OWN" || isAdmin
+        if isAdmin
+          $share = $ "<button type='button' class='btn btn-default btn-sm pull-right'>Share</button>"
+          $share.insertAfter $page.find 'thead button:last'
+          $share.css('marginRight', 10).click ->
+            Route.go "/albums/share"
           
       render $page
 
+    # Display the album sharing page
+    Route.register "/albums/share", (args,render) ->
+      render "<div/>"
+
+    # Display the contents of an album
     Route.register "/album/*", (args,render) -> 
       get args[0], (album) ->
 
