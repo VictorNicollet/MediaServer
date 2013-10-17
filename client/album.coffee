@@ -98,13 +98,8 @@ do ->
     Route.register "/", (args,render) ->
       $page = $ "<table class='table'/>"
 
-      $newAlbum = $ "<thead><tr><td><button type='button' class='btn btn-success btn-sm pull-right'>New album</button><h2>Albums</h2></tr></td><thead>"
-      $newAlbum.appendTo $page
-      $newAlbum.find("button").click ->
-        name = prompt "Name of the new album"
-        if name
-          create name, (album) ->
-            Route.go("/album/" + album.album)
+      $head = $ "<thead><tr><td><h2>Albums</h2></tr></td><thead>"
+      $head.appendTo $page
 
       $list = $ "<tbody/>"      
       $list.appendTo $page
@@ -123,8 +118,19 @@ do ->
             $shared.appendTo $link.find 'td'                
       
         if isAdmin
+
+          # New album button
+          $new = $ "<button type='button' class='btn btn-success btn-sm pull-right'>New album</button>"
+          $new.insertBefore $page.find 'thead t2'
+          $new.find("button").click ->
+            name = prompt "Name of the new album"
+            if name
+              create name, (album) ->
+                Route.go("/album/" + album.album)
+
+          # Share albums button
           $share = $ "<button type='button' class='btn btn-default btn-sm pull-right'>Share</button>"
-          $share.insertAfter $page.find 'thead button:last'
+          $share.insertBefore $page.find 'thead h2'
           $share.css('marginRight', 10).click ->
             Route.go "/albums/share"
           

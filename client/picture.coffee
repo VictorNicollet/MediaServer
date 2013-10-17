@@ -43,7 +43,12 @@ $ ->
   @ondrop = (e) ->
     return if Picture.onDropFile == null
     do e.preventDefault
-    Picture.onDropFile file for file in e.dataTransfer.files
+    files = e.dataTransfer.files
+    files.sort (a,b) ->
+      return -1 if a.lastModifiedDate < b.lastModifiedDate
+      return  1 if a.lastModifiedDate > b.lastModifiedDate
+      return  0
+    Picture.onDropFile file for file in files
     false
     
   Route.onChange.push ->
