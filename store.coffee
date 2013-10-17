@@ -4,10 +4,18 @@ crypto = require 'crypto'
 fs = require 'fs'
 
 # Configuration
-bucket = 'pics.nicollet.net'
-prefix = 'dev'
+bucket = 'docs.nicollet.net'
 
-AWS.config.loadFromPath './s3.json'
+if fs.existsSync "./s3.json"
+  prefix = 'dev'
+  AWS.config.loadFromPath './s3.json'
+else
+  prefix = 'alix.et.victor'
+  AWS.config.update
+    region: "eu-west-1"
+    accessKeyId: process.env.S3KEY
+    secretAccessId: process.env.S3SECRET
+
 S3 = new AWS.S3()
 
 # This module serializes all write operations.

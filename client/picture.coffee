@@ -43,7 +43,7 @@ $ ->
   @ondrop = (e) ->
     return if Picture.onDropFile == null
     do e.preventDefault
-    files = e.dataTransfer.files
+    files = (file for file in e.dataTransfer.files) # Turn into array
     files.sort (a,b) ->
       return -1 if a.lastModifiedDate < b.lastModifiedDate
       return  1 if a.lastModifiedDate > b.lastModifiedDate
