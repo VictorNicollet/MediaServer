@@ -14,7 +14,7 @@ else
   AWS.config.update
     region: "eu-west-1"
     accessKeyId: process.env.S3KEY
-    secretAccessId: process.env.S3SECRET
+    secretAccessKey: process.env.S3SECRET
 
 S3 = new AWS.S3()
 
