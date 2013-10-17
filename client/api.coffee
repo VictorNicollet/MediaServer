@@ -148,7 +148,7 @@
     all: (next) ->
       API.requests.start (end) ->
         API.get "albums", {}, (data) ->
-          next data.albums
+          next data.albums, data.admin
           do end
 
     # Returns the list of pictures in an album

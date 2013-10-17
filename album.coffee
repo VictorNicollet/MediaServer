@@ -35,13 +35,14 @@ isAdmin = (albums,email) ->
   albums.admins.indexOf(email) != -1
 
 # Grab all visible albums for a given user
-grabVisibleAlbums = (albums,email) -> 
+grabVisibleAlbums = (albums,email,list=null) ->
+  list = list || albums.albums
   grab = (album) ->
     out = 
       name: album.name || "Untitled"
       album: album.id
       access:
-        if admin then 'OWN' else
+        if admin then 'PUT' else
           if album.put.indexOf(emailId) != -1 then 'PUT' else
            if album.get.indexOf(emailId) != -1 then 'GET' else ''
     if isAdmin
@@ -50,7 +51,7 @@ grabVisibleAlbums = (albums,email) ->
     out
   admin = isAdmin albums, email
   emailId = albums.contacts.indexOf email
-  grabbed = (grab album for album in albums.albums)
+  grabbed = (grab album for album in list)
   (proof.make album for album in grabbed when album.access)
 
 # The default piclist
@@ -89,7 +90,10 @@ module.exports.install = (app,next) ->
   api.get app, 'albums', (req, fail, json) ->
     albums = store.getJSON S3Key.albums, (err,albums) ->
       return fail err if err
-      json { albums: grabVisibleAlbums albums, req.email }
+      albums = albums || defaultAlbums()
+      json
+        admin: isAdmin albums, req.email
+        albums: grabVisibleAlbums albums, req.email 
 
   # Set the access level for albums
   api.post app, 'albums/share', (req, fail, json) ->
@@ -142,10 +146,11 @@ module.exports.install = (app,next) ->
       name = req.body.name || "Untitled"
       album = makeAlbum albums, name
       albums.albums.push album
+      album = grabVisibleAlbums albums, req.email, [album]
       next null, albums
-    store.updateJSON S3Keys.albums, update, (err) -> 
+    store.updateJSON S3Key.albums, update, (err) -> 
       return fail err if err
-      json { album: album }
+      json { album: album[0] }
 
   # Return the list of all pictures in an album
   api.post app, 'album/pictures', (req, fail, json) ->

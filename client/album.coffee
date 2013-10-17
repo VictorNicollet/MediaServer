@@ -6,6 +6,9 @@ do ->
   # ==============================================================================
   # Model functions
 
+  # Is the user an administrator ?
+  isAdmin = false
+
   # A cache of all album proofs by identifier
   albumById = {}
 
@@ -14,7 +17,8 @@ do ->
 
   # Load all albums
   loadAll = (next) ->
-    API.album.all (list) ->
+    API.album.all (list,admin) ->
+      isAdmin = admin
       albumById[album.album] = album for album in list        
       next list
 
@@ -104,13 +108,12 @@ do ->
       $list = $ "<tbody/>"      
       $list.appendTo $page
       loadAll (list) ->
-        isAdmin = false
+
         for album in list
           $link = $ "<tr><td><a/></td></tr>"
           $link.find("a").attr("href","/album/"+album.album).text(album.name)
           $link.appendTo $list
-          if album.access == "OWN"
-            isAdmin = true
+          if isAdmin
             count = album.get.length + album.put.length
             share = if count == 0 then "" else
               if count == 1 then "Shared with 1 person" else "Shared with #{count} people"
@@ -121,8 +124,8 @@ do ->
 
           # New album button
           $new = $ "<button type='button' class='btn btn-success btn-sm pull-right'>New album</button>"
-          $new.insertBefore $page.find 'thead t2'
-          $new.find("button").click ->
+          $new.insertBefore $page.find 'thead h2'
+          $new.click ->
             name = prompt "Name of the new album"
             if name
               create name, (album) ->
@@ -142,7 +145,8 @@ do ->
 
       loadAll (list) ->
         for album in list
-          continue if album.access != "OWN"
+
+          continue if !isAdmin
 
           $group = $ '<div class="form-group"/>'
 
@@ -183,7 +187,7 @@ do ->
         $name = $('<h3/>').text(album.name)
         $name.appendTo $page
 
-        if album.access == 'OWN' || album.access == 'PUT'
+        if album.access == 'PUT'
           $name.before '<p class="pull-right text-muted">Drop pictures here to upload them</p>'
           Picture.onDropFile = (f) ->
             Picture.upload f, album, (id) ->
