@@ -32,7 +32,7 @@ makeAlbum = (albums,name) ->
 
 # Is a given email the administrator of an album set ?
 isAdmin = (albums,email) ->
-  albums.admins.indexOf email != -1
+  albums.admins.indexOf(email) != -1
 
 # Grab all visible albums for a given user
 grabVisibleAlbums = (albums,email) -> 
@@ -42,8 +42,8 @@ grabVisibleAlbums = (albums,email) ->
       album: album.id
       access:
         if admin then 'OWN' else
-          if album.put.indexOf emailId != -1 then 'PUT' else
-           if album.get.indexOf emailId != -1 then 'GET' else ''
+          if album.put.indexOf(emailId) != -1 then 'PUT' else
+           if album.get.indexOf(emailId) != -1 then 'GET' else ''
     if isAdmin
       out.get = (albums.contacts[i] for i in album.get)
       out.put = (albums.contacts[i] for i in album.put)
@@ -91,6 +91,45 @@ module.exports.install = (app,next) ->
       return fail err if err
       json { albums: grabVisibleAlbums albums, req.email }
 
+  # Set the access level for albums
+  api.post app, 'albums/share', (req, fail, json) ->
+    update = (albums,next) ->
+
+      console.log req.body
+                  
+      albums = albums || defaultAlbums()
+      if !isAdmin albums, req.email
+        return next "Only admins can share albums", null
+
+      emails = []
+      emailPos = (email) ->
+
+        email = email.trim()
+        return null if !email
+        
+        return null if isAdmin albums, email
+
+        idx = emails.indexOf email
+        return idx if idx != -1
+
+        emails.push email
+        emails.length - 1
+        
+      for album in albums.albums
+        shares = req.body[album.id] || []
+        album.put = []
+        album.get = (pos for pos in (emailPos email for email in shares) when pos != null)
+
+      albums.contacts = emails
+
+      console.log albums
+
+      next null, albums
+
+    store.updateJSON S3Key.albums, update, (err) ->
+      return fail err if err
+      json { success: true }
+
   # Creating a new album, returning the entire new album set
   api.post app, 'album/create', (req, fail, json) ->
     album = null
@@ -98,7 +137,7 @@ module.exports.install = (app,next) ->
       albums = albums || defaultAlbums()
       if !isAdmin albums, req.email
         return next "Only admins can create albums", null
-      if albums.length == maxAlbums
+      if albums.albums.length == maxAlbums
         return next "Maximum number of albums reached", null
       name = req.body.name || "Untitled"
       album = makeAlbum albums, name

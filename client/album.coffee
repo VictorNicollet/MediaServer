@@ -18,8 +18,6 @@ do ->
       albumById[album.album] = album for album in list        
       next list
 
-   
-
   # Create a new album and returns its id and proof.
   create = (name,next) ->
     API.album.create name, (album) ->
@@ -61,7 +59,11 @@ do ->
         if albumPictures.pictures[i].picture == picture.picture
           return albumPictures.pictures[i] = picture
       albumPictures.pictures.push picture
-  
+
+  # Save access sharing
+  saveAccess = (access, next) ->
+    API.album.share access, next
+      
   # Resize an image, send the thumbnail to the server
   resize = (img,picture,album,next) ->
 
@@ -112,7 +114,14 @@ do ->
           $link = $ "<tr><td><a/></td></tr>"
           $link.find("a").attr("href","/album/"+album.album).text(album.name)
           $link.appendTo $list
-          isAdmin = album.access == "OWN" || isAdmin
+          if album.access == "OWN"
+            isAdmin = true
+            count = album.get.length + album.put.length
+            share = if count == 0 then "" else
+              if count == 1 then "Shared with 1 person" else "Shared with #{count} people"
+            $shared = $('<span class="text-muted pull-right"/>').text share
+            $shared.appendTo $link.find 'td'                
+      
         if isAdmin
           $share = $ "<button type='button' class='btn btn-default btn-sm pull-right'>Share</button>"
           $share.insertAfter $page.find 'thead button:last'
@@ -131,21 +140,32 @@ do ->
 
           $group = $ '<div class="form-group"/>'
 
-          $label = $('<label/>').attr({for:album.id}).text(album.name)
+          $label = $('<label/>').attr({for:"share-"+album.album}).text(album.name)
           $label.appendTo $group
           
           shared = album.get.concat album.put
           $field = $('<textarea class="form-control"/>').val(shared.join "; ").attr
-            id: album.id
-            name: album.id
+            id: "share-" + album.album
+            name: album.album
             placeholder: 'name@domain.com; name@domain.com'
           $field.appendTo $group
-
 
           $group.appendTo $form
 
         $("<button type='submit' class='btn btn-primary'>Save</button>").appendTo $form
-        
+
+      $form.submit ->
+
+        $form.find('button').attr "disabled", true
+
+        access = {}
+        $form.find('textarea').each ->
+          access[$(@).attr 'name'] = $(@).val().split(';')
+
+        saveAccess access, -> Route.go '/'
+
+        false
+          
       render $form
       
     # Display the contents of an album
@@ -161,7 +181,6 @@ do ->
           $name.before '<p class="pull-right text-muted">Drop pictures here to upload them</p>'
           Picture.onDropFile = (f) ->
             Picture.upload f, album, (id) ->
-              console.log "File uploaded: %s = %o", id, f 
 
         getTheGallery = ->
           $('#empty').remove() 

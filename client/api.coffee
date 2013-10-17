@@ -166,6 +166,13 @@
           next data
           do end
 
+    # Share albums
+    share: (access,next) ->
+      API.requests.start (end) ->
+        API.post "albums/share", access, (data) ->
+          do next
+          do end
+
     # The URL where files should be sent
     uploadUrl: "/api/album/upload"
 
