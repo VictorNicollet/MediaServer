@@ -28,9 +28,10 @@
         '<div class="progress-bar" role="progressbar"/></div></div>'
       $p.insertBefore('#container')
     p = Upload.currentProgress()
-    $p.find('.progress-bar').css({"width":(p*100).toFixed(2) + '%'})
+    $p.find('.progress-bar').css {"width":(p*100).toFixed(2) + '%'}
     if p == 1
-      $p.slideUp 'slow'
+      $p.slideUp 'slow', ->
+        $p.find('.progress-bar').css {"width":"0%"}
     else
       $p.slideDown 'fast'
 
@@ -53,6 +54,7 @@
         return task.run ->
           Upload.isRunning = false
           setTimeout Upload.run 250
+    Upload.queue.length = 0
     Upload.isRunning = false
     
   # Actually send data out. Returns an uploader object with a wait
