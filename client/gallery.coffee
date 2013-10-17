@@ -10,6 +10,7 @@ class Gallery
     @next = 0
     @onLargePicture = []
     @pending = 0
+    @$target.after "<div class='gallery-loading'>Loading...</div>"
 
   addPicture: (picture) ->
 
@@ -30,12 +31,18 @@ class Gallery
       if img.naturalHeight > @maxHeight || img.naturalWidth > @maxWidth
         for f in @onLargePicture
           f pic, (url) ->
-            $img = $('<img/>').attr('src', url).css
-              width: img.width
-              height: img.height
-            $img.insertBefore pic.$img
-            pic.$img.remove()
-            pic.$img = $img
+            img2 = document.createElement 'img'
+            img2.onload = ->
+              $i = $ img2
+              $i.css
+                width: img.width
+                height: img.height
+                float: "left"
+                marginRight: $(img).css 'marginRight'
+              $i.insertBefore pic.$img
+              pic.$img.remove()
+              pic.$img = $i
+            img2.src = url            
       @unfit unfit
       do @start
 
@@ -102,8 +109,13 @@ class Gallery
   # Repeatedly fit and render elements
   fitAll: -> 
 
+    do @$target.next().show
+
     next = do @fit
-    return if next == null
+    if next == null
+      if @next == @pictures.length
+        do @$target.next().hide
+      return
 
     count = next[1]
     height = next[0]
@@ -116,11 +128,6 @@ class Gallery
 
     $line.appendTo @$target
 
-    appearRandom = ($what) ->
-      time = Math.random() * 500 + 500
-      appear = -> $what.fadeIn 'fast'
-      setTimeout appear, time
-
     while count-- > 0
       pic = @pictures[@next++]
       pic.$img.css
@@ -129,6 +136,6 @@ class Gallery
         width: height * pic.ratio
         marginRight: if count == 0 then 0 else @gap
       pic.$img.appendTo $line
-      appearRandom $line
+      $line.fadeIn 1000
       
     do @fitAll    

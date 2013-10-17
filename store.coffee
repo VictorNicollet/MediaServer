@@ -31,6 +31,21 @@ run = (action) ->
 # The default error message
 error = "Error connecting to Amazon S3"
 
+# Functions with retrying
+putObjectRetry = (obj, next, retries = 3) ->
+  S3.putObject obj, (err,data) ->
+    if err && retries > 0
+      putObjectRetry obj, next, retries-1
+    else
+      next err, data
+    
+getObjectRetry = (obj, next, retries = 3) ->
+  S3.getObject obj, (err, data) ->  
+    if err && retries > 0
+      getObjectRetry obj, next, retries-1
+    else
+      next err, data
+
 # Generic file storage function
 put = (path,getContent,next) ->
   run (done) ->
@@ -40,7 +55,7 @@ put = (path,getContent,next) ->
         Bucket: bucket
         Key: prefix + '/' + path
         Body: content
-      S3.putObject obj, (err,data) ->
+      putObjectRetry obj, (err,data) ->
         do done
         console.log "S3.putObject #{obj.Key}: #{err}" if err 
         next(if err then error else null)
@@ -50,7 +65,7 @@ get = (path,next) ->
   obj =
     Bucket: bucket
     Key: prefix + '/' + path
-  S3.getObject obj, (err,data) ->
+  getObjectRetry obj, (err,data) ->
     err = null if /^NoSuchKey/.test err
     console.log "S3.getObject #{obj.Key}: #{err}" if err
     err = error if err
@@ -123,7 +138,7 @@ uploadFile = (prefix2,file,next) ->
         ContentType: file.type
         ContentDisposition: "attachment; filename=#{file.name}"
       run (done) ->
-        S3.putObject obj, (err,data) ->
+        putObjectRetry obj, (err,data) ->
           do done
           console.log "S3.putObject #{obj.Key}: #{err}" if err
           return next err, null if err
@@ -144,7 +159,7 @@ uploadFileFromString = (prefix2,file,next) ->
     ContentType: file.type
     ContentDisposition: "attachment; filename=#{file.name}"
   run (done) ->
-    S3.putObject obj, (err,data) ->
+    putObjectRetry obj, (err,data) ->
       do done
       console.log "S3.putObject #{obj.Key}: #{err}" if err
       return next err, null if err
