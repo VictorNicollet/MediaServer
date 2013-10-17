@@ -123,8 +123,31 @@ do ->
 
     # Display the album sharing page
     Route.register "/albums/share", (args,render) ->
-      render "<div/>"
+      $form = $ "<form role='form'/>"
 
+      loadAll (list) ->
+        for album in list
+          continue if album.access != "OWN"
+
+          $group = $ '<div class="form-group"/>'
+
+          $label = $('<label/>').attr({for:album.id}).text(album.name)
+          $label.appendTo $group
+          
+          shared = album.get.concat album.put
+          $field = $('<textarea class="form-control"/>').val(shared.join "; ").attr
+            id: album.id
+            name: album.id
+            placeholder: 'name@domain.com; name@domain.com'
+          $field.appendTo $group
+
+
+          $group.appendTo $form
+
+        $("<button type='submit' class='btn btn-primary'>Save</button>").appendTo $form
+        
+      render $form
+      
     # Display the contents of an album
     Route.register "/album/*", (args,render) -> 
       get args[0], (album) ->

@@ -37,12 +37,17 @@ isAdmin = (albums,email) ->
 # Grab all visible albums for a given user
 grabVisibleAlbums = (albums,email) -> 
   grab = (album) ->
-    name: album.name || "Untitled"
-    album: album.id
-    access:
-      if admin then 'OWN' else
-        if album.put.indexOf emailId != -1 then 'PUT' else
-          if album.get.indexOf emailId != -1 then 'GET' else ''
+    out = 
+      name: album.name || "Untitled"
+      album: album.id
+      access:
+        if admin then 'OWN' else
+          if album.put.indexOf emailId != -1 then 'PUT' else
+           if album.get.indexOf emailId != -1 then 'GET' else ''
+    if isAdmin
+      out.get = (albums.contacts[i] for i in album.get)
+      out.put = (albums.contacts[i] for i in album.put)
+    out
   admin = isAdmin albums, email
   emailId = albums.contacts.indexOf email
   grabbed = (grab album for album in albums.albums)
