@@ -19,13 +19,13 @@ do ->
   loadAll = (next) ->
     API.album.all (list,admin) ->
       isAdmin = admin
-      albumById[album.album] = album for album in list        
+      albumById[album.id.id] = album for album in list        
       next list
 
   # Create a new album and returns its id and proof.
   create = (name,next) ->
     API.album.create name, (album) ->
-      albumById[album.album] = album
+      albumById[album.id.id] = album
       next album
 
   # Get an album by identifier. Return null if not available.
@@ -33,7 +33,7 @@ do ->
     if id of albumById
       album = albumById[id]
       now = (new Date).toISOString()
-      return next album if now < album.expires
+      return next album if now < album.id.expires
       return next null if !reload
       loadAll ->
         get id, next, false
@@ -47,7 +47,7 @@ do ->
     if id of albumPicturesById && albumPicturesById.expires > +(new Date())
       next albumPicturesById[id]
     get id, (album) ->
-      API.album.pictures album, (contents) -> 
+      API.album.pictures album.id, (contents) -> 
         now = new Date()
         contents.expires = new Date(+now + 1000 * 600) # 10 minutes
         albumPicturesById[id] = contents
@@ -55,7 +55,7 @@ do ->
 
   # Update the cached version of a picture based on results from the server
   updateCachedPicture = (album, picture) ->
-    id = album.album
+    id = album.id.id
     if id of albumPicturesById && albumPicturesById.expires > +(new Date())
       albumPictures = albumPicturesById[id]
       i = 0
@@ -90,8 +90,8 @@ do ->
     ctx.drawImage img, 0, 0, w, h
     base64 = canvas.toDataURL('image/jpeg').substring 'data:image/jpeg;base64,'.length 
 
-    API.album.setThumbnail album, picture.picture, base64, (newPicture) ->
-      updateCachedPicture album.album, newPicture.picture
+    API.album.setThumbnail album.id, picture.picture, base64, (newPicture) ->
+      updateCachedPicture album.id, newPicture.picture
       next newPicture.picture  
 
   # ==============================================================================
@@ -111,7 +111,7 @@ do ->
 
         for album in list
           $link = $ "<tr><td><a/></td></tr>"
-          $link.find("a").attr("href","/album/"+album.album).text(album.name)
+          $link.find("a").attr("href","/album/"+album.id.id).text(album.name)
           $link.appendTo $list
           if isAdmin
             count = album.get.length + album.put.length
@@ -129,7 +129,7 @@ do ->
             name = prompt "Name of the new album"
             if name
               create name, (album) ->
-                Route.go("/album/" + album.album)
+                Route.go("/album/" + album.id.id)
 
           # Share albums button
           $share = $ "<button type='button' class='btn btn-default btn-sm pull-right'>Share</button>"
@@ -150,13 +150,13 @@ do ->
 
           $group = $ '<div class="form-group"/>'
 
-          $label = $('<label/>').attr({for:"share-"+album.album}).text(album.name)
+          $label = $('<label/>').attr({for:"share-"+album.id.id}).text(album.name)
           $label.appendTo $group
           
           shared = album.get.concat album.put
           $field = $('<textarea class="form-control"/>').val(shared.join "; ").attr
-            id: "share-" + album.album
-            name: album.album
+            id: "share-" + album.id.id
+            name: album.id.id
             placeholder: 'name@domain.com; name@domain.com'
           $field.appendTo $group
 
@@ -187,10 +187,11 @@ do ->
         $name = $('<h3/>').text(album.name)
         $name.appendTo $page
 
-        if album.access == 'PUT'
+        if album.id.access == 'PUT'
           $name.before '<p class="pull-right text-muted">Drop pictures here to upload them</p>'
           Picture.onDropFile = (f) ->
-            Picture.upload f, album, (id) ->
+            getAlbum = (next) -> get(album.id.id,next)
+            Picture.upload f, getAlbum, (id) ->
 
         getTheGallery = ->
           $('#empty').remove() 
@@ -206,7 +207,7 @@ do ->
           else
             $t.data 'gallery'
 
-        getPictures album.album, (pics) ->
+        getPictures album.id.id, (pics) ->
 
           if pics.pictures.length == 0
 
@@ -219,7 +220,7 @@ do ->
               gal.addPicture picture
 
           Picture.onUploadFinished.push (album2,picture) ->
-            return if album2.album != album.album
+            return if album2.id.id != album.id.id
             gal = getTheGallery()
             gal.addPicture picture
                       

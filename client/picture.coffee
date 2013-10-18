@@ -10,17 +10,19 @@
   onUploadFinished: []
 
   # Start uploading a file to an album
-  upload: (file,album,next) -> 
+  upload: (file,getAlbum,next) -> 
     Upload.add
       done: 0
       size: 2
       run: (end) ->
         if !@uploader
-          @uploader = Upload.send file, API.album.uploadUrl, { album: album }, (d) ->
-            console.log d
-            next d.picture.picture
-            for f in Picture.onUploadFinished
-              f album, d.picture
+          getAlbum (album) =>
+            return @done = 2 if album == null 
+            @uploader = Upload.send file, API.album.uploadUrl, { album: album.id }, (d) ->
+              console.log d
+              next d.picture.picture
+              for f in Picture.onUploadFinished
+                f album, d.picture
           do end
         else    
           @uploader.wait (s) =>
