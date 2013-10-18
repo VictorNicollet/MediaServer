@@ -194,19 +194,20 @@ module.exports.install = (app,next) ->
       name: "thumb.jpg"
       content: thumb
 
-    store.uploadFileFromString S3Key.thumbPrefix(album), file, (err,id2) -> 
+    store.uploadFile S3Key.thumbPrefix(album), file, (err,id2) -> 
       return fail err if err
 
       update = (piclist,next) ->
         piclist = piclist || defaultPiclist()
         pos = piclist.pics.indexOf id
         return next "Picture not found in album.", null if pos == -1
+        return next null, null if piclist.thumbs[pos] == id2
         piclist.thumbs[pos] = id2
         newPicture = getSignedPicture album, piclist, pos
         next null, piclist
 
       store.updateJSON S3Key.album(album), update, (err) ->
-        return fail err if err
+        return fail("When updating album: #{err}") if err
         json { picture: newPicture }
    
 
@@ -223,26 +224,26 @@ module.exports.install = (app,next) ->
       catch error
         null
       
-    if !album || !proof.check album || (album.access != "OWN" && album.access != "PUT") 
+    if !album || !proof.check album || album.access != "PUT" 
       return fail "Invalid album signature." 
 
     store.uploadFile S3Key.originalPrefix(album), file, (err,id) ->
 
-      return fail err if err
+      return fail("When uploading file: #{err}") if err
 
       thePicture = null
 
       update = (piclist,next) ->
         piclist = piclist || defaultPiclist()
         pos = piclist.pics.indexOf id
-        return next null, piclist if pos != -1
+        return next null, null if pos != -1
         piclist.thumbs.push null
         piclist.pics.push id
         thePicture = getSignedPicture album, piclist, piclist.pics.length - 1
         next null, piclist
         
       store.updateJSON S3Key.album(album), update, (err) ->
-        return fail err if err
+        return fail("When updating album: #{err}") if err
         json { picture: thePicture }
       
   do next
