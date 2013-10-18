@@ -58,6 +58,7 @@
         else
           next data
       type: 'GET'
+      cache: false
       contentType: 'application/json'
       data: payload
       error: (xhr,error) ->

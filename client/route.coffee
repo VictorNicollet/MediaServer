@@ -1,4 +1,5 @@
 # Routing based on the page URL
+
 @Route =
 
   # Functions in this array are called every time the page changes,
@@ -41,19 +42,32 @@
       return if item path
 
   # Reach a route. Updates the browser's current URL.
-  go: (path) ->
+  go: (path) ->  
     history.pushState null, null, path
     Route.dispatch path
 
-# When state is popped, use the current path to dispatch 
-@onpopstate = (event) ->
-  do Route.dispatch
 
-# React to the event
-$('body').on 'click', 'a', (event) ->
-  return true if document.location.host != @host
-  do event.stopPropagation
-  Route.go @pathname
-  return false
-    
-    
+# --------------------
+# On HTML5 browsers...
+ 
+if 'pushState' in history
+
+  # When state is popped, use the current path to dispatch 
+  @onpopstate = (event) ->
+    do Route.dispatch
+
+  # React to the event
+  $('body').on 'click', 'a', (event) ->
+    return true if document.location.host != @host
+    do event.stopPropagation
+    Route.go @pathname
+    return false
+
+# ----------------------
+# On earlier browsers...
+ 
+else
+
+  $ ->
+    do Route.dispatch
+   
