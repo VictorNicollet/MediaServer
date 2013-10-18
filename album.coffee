@@ -1,5 +1,5 @@
 require 'coffee-script'
-store = require './store'
+Store = require './store'
 api = require './api'
 proof = require './proof'
 
@@ -62,10 +62,10 @@ defaultPiclist = ->
 # Get a signed picture
 getSignedPicture = (album,piclist,i) ->
 
-  url = store.getUrl S3Key.original album, piclist.pics[i]
+  url = Store.getUrl S3Key.original album, piclist.pics[i]
   thumb = url
   if piclist.thumbs[i] != null
-    thumb = store.getUrl S3Key.thumb album, piclist.thumbs[i]
+    thumb = Store.getUrl S3Key.thumb album, piclist.thumbs[i]
 
   obj =
     picture: piclist.pics[i]
@@ -88,7 +88,7 @@ module.exports.install = (app,next) ->
 
   # Return the list of all available albums
   api.get app, 'albums', (req, fail, json) ->
-    albums = store.getJSON S3Key.albums, (err,albums) ->
+    albums = Store.getJSON S3Key.albums, (err,albums) ->
       return fail err if err
       albums = albums || defaultAlbums()
       json
@@ -130,7 +130,7 @@ module.exports.install = (app,next) ->
 
       next null, albums
 
-    store.updateJSON S3Key.albums, update, (err) ->
+    Store.updateJSON S3Key.albums, update, (err) ->
       return fail err if err
       json { success: true }
 
@@ -148,7 +148,7 @@ module.exports.install = (app,next) ->
       albums.albums.push album
       album = grabVisibleAlbums albums, req.email, [album]
       next null, albums
-    store.updateJSON S3Key.albums, update, (err) -> 
+    Store.updateJSON S3Key.albums, update, (err) -> 
       return fail err if err
       json { album: album[0] }
 
@@ -159,7 +159,7 @@ module.exports.install = (app,next) ->
     if !album || !proof.check album
       return fail "Invalid album signature."
 
-    store.getJSON S3Key.album(album), (err,data) ->
+    Store.getJSON S3Key.album(album), (err,data) ->
       return fail err if err
 
       data = data || defaultPiclist()
@@ -194,7 +194,7 @@ module.exports.install = (app,next) ->
       name: "thumb.jpg"
       content: thumb
 
-    store.uploadFile S3Key.thumbPrefix(album), file, (err,id2) -> 
+    Store.uploadFile S3Key.thumbPrefix(album), file, (err,id2) -> 
       return fail err if err
 
       update = (piclist,next) ->
@@ -206,7 +206,7 @@ module.exports.install = (app,next) ->
         newPicture = getSignedPicture album, piclist, pos
         next null, piclist
 
-      store.updateJSON S3Key.album(album), update, (err) ->
+      Store.updateJSON S3Key.album(album), update, (err) ->
         return fail("When updating album: #{err}") if err
         json { picture: newPicture }
    
@@ -227,7 +227,7 @@ module.exports.install = (app,next) ->
     if !album || !proof.check album || album.access != "PUT" 
       return fail "Invalid album signature." 
 
-    store.uploadFile S3Key.originalPrefix(album), file, (err,id) ->
+    Store.uploadFile S3Key.originalPrefix(album), file, (err,id) ->
 
       return fail("When uploading file: #{err}") if err
 
@@ -242,7 +242,7 @@ module.exports.install = (app,next) ->
         thePicture = getSignedPicture album, piclist, piclist.pics.length - 1
         next null, piclist
         
-      store.updateJSON S3Key.album(album), update, (err) ->
+      Store.updateJSON S3Key.album(album), update, (err) ->
         return fail("When updating album: #{err}") if err
         json { picture: thePicture }
       
