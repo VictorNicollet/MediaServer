@@ -1,6 +1,6 @@
 require 'coffee-script'
-Store = require '../store'
 Proof = require '../proof'
+Model = require '../model'
 
 # An album set contains the list of all albums available for an instance,
 # along with access and sharing rules.
@@ -20,7 +20,7 @@ class AlbumSet
   # The optional JSON provided to the constructor has the same format
   # as that returned by `serialize`.
 
-  constructor: (@_readonly,json = null) ->
+  constructor: (proof,@_readonly,json = null) ->
 
     # If no JSON is provided, this means the object does not exist
     # yet, so assume default values
@@ -175,37 +175,8 @@ class AlbumSet
       contacts: contacts
     json
 
-# Grab a readonly copy of the album set.
-  
-module.exports.get = (next) ->
-  Store.getJSON "albums.json", (err,json) ->
-    next err, null if err
-    next null, new AlbumSet(true,json)
+# -----------------
+# Install the model
 
-# Grab a read-write copy of the album set, apply the
-# `update` function to it, write it back to the persistent
-# store, then call the `next` function on the updated set.
-#
-# If the `update` function does not change the album set,
-# then nothing is written back to the persistent store
-# (to save time).
+Model.define module, AlbumSet, () -> "albums.json"
 
-module.exports.update = (update,next) ->
-
-  theAlbumSet = null
-
-  realUpdate = (json,next) ->
-    update new AlbumSet(false,json), (err,albumSet) ->
-      theAlbumSet = albumSet
-      
-      json = null
-      if albumSet != null && albumSet.hasChanged()
-        json = albumSet.serialize()
-         
-      next null, json 
-
-  realNext = (err) ->
-    next err, null if err
-    next null, theAlbumSet
-  
-  Store.updateJSON "albums.json", realUpdate, realNext

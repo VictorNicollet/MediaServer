@@ -1,6 +1,7 @@
 require 'coffee-script'
 Store = require '../store'
 Proof = require '../proof'
+Model = require '../model'
 
 # An album is a set of pictures. It contains all necessary
 # information for rendering those pictures, including
@@ -164,41 +165,7 @@ class Album
       @_thumbs[i] = md5
       next null, @forClient i 
 
-# The file URL of an album
+# ------------------
+# Install the module
 
-url = (id) -> "album-#{id}.json"
-    
-# Grab a readonly copy of the album.
-  
-module.exports.get = (proof,next) ->
-  Store.getJSON url(proof.id), (err,json) ->
-    next err, null if err
-    next null, new Album(proof,true,json)
-
-# Grab a read-write copy of the album set, apply the
-# `update` function to it, write it back to the persistent
-# store, then call the `next` function on the updated set.
-#
-# If the `update` function does not change the album set,
-# then nothing is written back to the persistent store
-# (to save time).
-
-module.exports.update = (proof,update,next) ->
-
-  theAlbum = null
-
-  realUpdate = (json,next) ->
-    update new Album(proof,false,json), (err,album) ->
-      theAlbum = album
-      
-      json = null
-      if album != null && album.hasChanged()
-        json = album.serialize()
-         
-      next null, json 
-
-  realNext = (err) ->
-    next err, null if err
-    next null, theAlbum
-  
-  Store.updateJSON url(proof.id), realUpdate, realNext
+Model.define module, Album, (id) -> "album-#{id}.json"

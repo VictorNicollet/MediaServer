@@ -9,7 +9,7 @@ module.exports.install = (app,next) ->
 
   # Return the list of all available albums
   api.get app, 'albums', (req, fail, json) ->
-    AlbumSet.get (err,albumSet) ->
+    AlbumSet.get '', (err,albumSet) ->
       return fail err if err
       json
         admin:  albumSet.isAdmin req.email
@@ -28,7 +28,7 @@ module.exports.install = (app,next) ->
         
       next null, albumSet
 
-    AlbumSet.update update, (err,albumSet) ->
+    AlbumSet.update '', update, (err,albumSet) ->
       return fail err if err
       json { success: true }
 
@@ -49,7 +49,7 @@ module.exports.install = (app,next) ->
 
       next null, albumSet
 
-    AlbumSet.update update, (err,albumSet) ->
+    AlbumSet.update '', update, (err,albumSet) ->
       return fail err if err
       json { album: albumSet.forClient album }
 
