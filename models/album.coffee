@@ -48,6 +48,17 @@ class Album
     # ...and not more
     @_thumbs.length = @_pics.length
 
+  # Create a parseable JSON object for this album.
+
+  serialize: ->
+
+    throw "This object is readonly" if @_readonly
+
+    json =
+      pics: @_pics
+      thumbs: @_thumbs
+    json
+    
   # Can this album be changed by the current user ? 
 
   isWritable: -> @_access == 'PUT' && !@_readonly
@@ -125,6 +136,7 @@ class Album
         i = @_pics.length
         @_pics.push md5
         @_thumbs.push null
+        @_changed = true
 
       next null, @forClient i
 
@@ -148,6 +160,7 @@ class Album
 
     Store.uploadFile "album/#{@_id}/thumb", file, (err,md5) =>
       next err, null if err
+      @_changed = true if @_thumbs[i] != md5
       @_thumbs[i] = md5
       next null, @forClient i 
 
