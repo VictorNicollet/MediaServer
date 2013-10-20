@@ -90,7 +90,7 @@ do ->
     ctx.drawImage img, 0, 0, w, h
     base64 = canvas.toDataURL('image/jpeg').substring 'data:image/jpeg;base64,'.length 
 
-    API.album.setThumbnail album.id, picture.picture, base64, (newPicture) ->
+    API.album.setThumbnail album.id, picture.id, base64, (newPicture) ->
       updateCachedPicture album.id, newPicture.picture
       next newPicture.picture  
 
