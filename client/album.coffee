@@ -260,7 +260,7 @@ do ->
               gal.addPicture picture
 
           Picture.onUploadFinished.push (id2,picture) ->
-            return if id2 != id
+            return if id2.toString() != id
             gal = getTheGallery()
             gal.addPicture picture
                       
