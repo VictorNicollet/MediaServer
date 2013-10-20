@@ -16,13 +16,12 @@
       size: 2
       run: (end) ->
         if !@uploader
-          getAlbum (album) =>
-            return @done = 2 if album == null 
-            @uploader = Upload.send file, API.album.uploadUrl, { album: album.id }, (d) ->
-              console.log d
-              next d.picture.picture
+          getAlbum (id) =>
+            return @done = 2 if id == null 
+            @uploader = Upload.send file, API.album.uploadUrl, { album: id }, (r) ->
+              next r.picture.picture
               for f in Picture.onUploadFinished
-                f album, d.picture
+                f id.id, r.picture
           do end
         else    
           @uploader.wait (s) =>

@@ -259,8 +259,8 @@ do ->
             for picture in pics
               gal.addPicture picture
 
-          Picture.onUploadFinished.push (album,picture) ->
-            return if album.id.id != id
+          Picture.onUploadFinished.push (id2,picture) ->
+            return if id2 != id
             gal = getTheGallery()
             gal.addPicture picture
                       
