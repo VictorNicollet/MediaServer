@@ -51,7 +51,7 @@ module.exports.install = (app,next) ->
 
     AlbumSet.update '', update, (err,albumSet) ->
       return fail err if err
-      json { album: albumSet.forClient album }
+      json { album: albumSet.forClient album, req.email }
 
   # Return the list of all pictures in an album
   api.post app, 'album/pictures', (req, fail, json) ->

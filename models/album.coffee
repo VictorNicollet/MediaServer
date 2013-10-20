@@ -31,11 +31,9 @@ class Album
 
   constructor: (proof,@_readonly,json = null) ->
 
-    # If no JSON is provided, this measn the object does not exist
+    # If no JSON is provided, this means the object does not exist
     # yet, so assume default values
-    json = json ||
-      pics: []
-      thumbs: []
+    json = json || { pics: [], thumbs: [] }
 
     @_access  = if Proof.check proof then proof.access else null
     @_id      = proof.id
