@@ -50,7 +50,7 @@
 # --------------------
 # On HTML5 browsers...
  
-if 'pushState' in history
+if 'pushState' of history
 
   # When state is popped, use the current path to dispatch 
   @onpopstate = (event) ->
