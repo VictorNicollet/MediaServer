@@ -80,12 +80,15 @@ class Album
     return null if i == null || i < 0 || i >= @_pics.length
 
     pic = @_pics[i]
-    thumb = @_thumbs[i] || pic
+    url = Store.getUrl "album/#{@_id}/original/#{@_pics[i]}" 
+    thumb = url
+    if @_thumbs[i] != null
+      thumb = Store.getUrl "album/#{@_id}/thumb/#{@_thumbs[i]}" 
     
     picture =
       id: pic
-      url: Store.getUrl "album/#{@_id}/original/#{pic}"
-      thumb: Store.getUrl "album/#{@_id}/original/#{thumb}"
+      url: url
+      thumb: thumb
     picture
 
   # Get all signed pictures.
@@ -186,4 +189,3 @@ module.exports.update = (proof,update,next) ->
     next null, theAlbum
   
   Store.updateJSON url(proof.id), realUpdate, realNext
-
