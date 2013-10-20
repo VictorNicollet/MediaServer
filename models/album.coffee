@@ -116,7 +116,7 @@ class Album
     if @_pics.length >= @maxPictures
       return next "Maximum album size reached.", null
 
-    Store.uploadFile "album/#{@_id}/original", file, (err,md5) ->
+    Store.uploadFile "album/#{@_id}/original", file, (err,md5) =>
 
       next err, null if err
 
@@ -138,7 +138,7 @@ class Album
     i = @indexOf md5
     return next "Unknown picture #{md5}.", null if i == null
 
-    if @_thumb[i] != null
+    if @_thumbs[i] != null
       "nothing" # TODO: delete old thumbnail here
 
     file =
@@ -146,9 +146,9 @@ class Album
       name: 'thumb.jpg'
       content: thumb
 
-    Store.uploadFile "album/#{@_id}/thumb", file, (err,md5) ->
+    Store.uploadFile "album/#{@_id}/thumb", file, (err,md5) =>
       next err, null if err
-      @_thumb[i] = md5
+      @_thumbs[i] = md5
       next null, @forClient i 
 
 # The file URL of an album
@@ -175,7 +175,7 @@ module.exports.update = (proof,update,next) ->
   theAlbum = null
 
   realUpdate = (json,next) ->
-    update new AlbumSet(proof,false,json), (err,album) ->
+    update new Album(proof,false,json), (err,album) ->
       theAlbum = album
       
       json = null
