@@ -7,69 +7,91 @@ do ->
   # Model functions
 
   # Is the user an administrator ?
+  # This is a question asked so frequently that it's worth storing it here.
+  # The value will be set after calling `loadAll`.
+
   isAdmin = false
 
-  # A cache of all album proofs by identifier
+  # The model stores elementary information about albums, such as the name.
+  # It also stores model identifiers (along with their proofs). It does not,
+  # however, store album pictures: these are queried every single time.
+
   albumById = {}
 
-  # Contents of each album, by identifier, with expiration date
-  albumPicturesById = {}
+  cache = (a) -> albumById[a.id.id] = a
 
-  # Load all albums
+  # Loads or reloads all albums. Also determines whether the user is an
+  # administrator.
+   
   loadAll = (next) ->
-    API.album.all (list,admin) ->
-      isAdmin = admin
-      albumById[album.id.id] = album for album in list        
-      next list
+    API.requests.start (end) ->
+      API.get "albums", {}, (r) ->
+        isAdmin = r.admin          
+        cache album for album in r.albums        
+        next r.albums
+        do end
 
-  # Create a new album and returns its id and proof.
-  create = (name,next) ->
-    API.album.create name, (album) ->
-      albumById[album.id.id] = album
-      next album
+  # Grabs an album by its identifier. Does not care about cache freshess:
+  # an album in cache will always be returned. Returns null if no album
+  # is found.
 
-  # Get an album by identifier. Return null if not available.
   get = (id,next,reload=true) ->
+    if id of albumById
+      next albumById[id]
+    else if reload 
+      loadAll -> get id, next, false
+    else
+      next null
+
+  # Grabs an album's identifier along with a proof. If the proof
+  # is expired, queries the server for a fresh proof. 
+  
+  getProof = (id,next,reload=true) ->
+    
     if id of albumById
       album = albumById[id]
       now = (new Date).toISOString()
-      return next album if now < album.id.expires
-      return next null if !reload
-      loadAll ->
-        get id, next, false
+      return next album.id if now < album.id.expires
+
+    if reload
+      loadAll -> getProof id, next, false
     else
-      return next null if !reload
-      loadAll ->
-        get id, next, false
+      next null
+      
+  # Create a new album. Returns a cache-able album object.
+   
+  create = (name,next) ->
+    API.requests.start (end) ->
+      API.post "album/create", { name: name }, (r) ->
+        next cache r.album        
+        do end
 
-  # Get the contents of an album
+  # Get the contents of an album. This query is not cached.
+  # Returned object contains:
+   
   getPictures = (id,next) ->
-    if id of albumPicturesById && albumPicturesById.expires > +(new Date())
-      next albumPicturesById[id]
-    get id, (album) ->
-      API.album.pictures album.id, (contents) -> 
-        now = new Date()
-        contents.expires = new Date(+now + 1000 * 600) # 10 minutes
-        albumPicturesById[id] = contents
-        next contents
-
-  # Update the cached version of a picture based on results from the server
-  updateCachedPicture = (album, picture) ->
-    id = album.id.id
-    if id of albumPicturesById && albumPicturesById.expires > +(new Date())
-      albumPictures = albumPicturesById[id]
-      i = 0
-      while i < albumPictures.pictures.length
-        if albumPictures.pictures[i].picture == picture.picture
-          return albumPictures.pictures[i] = picture
-      albumPictures.pictures.push picture
+    getProof id, (id) ->
+      API.requests.start (end) ->
+        API.post "album/pictures", { album: id }, (r) ->
+          next r.pictures
+          do end
 
   # Save access sharing
-  saveAccess = (access, next) ->
-    API.album.share access, next
+  
+  share = (access, next) ->
+    API.requests.start (end) ->
+      API.post "albums/share", access, ->
+        do next
+        do end
       
-  # Resize an image, send the thumbnail to the server
+  # Resize an image, send the thumbnail to the server, return the new
+  # picture, or null if failed.
+  # 
+  # The user should have 'put' access to do so. 
+  
   resize = (img,picture,album,next) ->
+
+    return next null if album.id.access != 'PUT'
 
     maxH = Gallery.prototype.maxHeight
     maxW = Gallery.prototype.maxWidth
@@ -90,9 +112,13 @@ do ->
     ctx.drawImage img, 0, 0, w, h
     base64 = canvas.toDataURL('image/jpeg').substring 'data:image/jpeg;base64,'.length 
 
-    API.album.setThumbnail album.id, picture.id, base64, (newPicture) ->
-      updateCachedPicture album.id, newPicture.picture
-      next newPicture.picture  
+    API.requests.start (end) ->
+      getProof album.id.id, (id) ->
+        return do end if id == null 
+        payload = { album: id, picture: picture.id, thumb: base64 }
+        API.post "album/thumbnail", payload, (r) ->
+          next r.picture
+          do end
 
   # ==============================================================================
   # Controller functions
@@ -147,16 +173,17 @@ do ->
         for album in list
 
           continue if !isAdmin
+          id = album.id.id
 
           $group = $ '<div class="form-group"/>'
 
-          $label = $('<label/>').attr({for:"share-"+album.id.id}).text(album.name)
+          $label = $('<label/>').attr({for:"share-"+id}).text(album.name)
           $label.appendTo $group
           
           shared = album.get.concat album.put
           $field = $('<textarea class="form-control"/>').val(shared.join "; ").attr
-            id: "share-" + album.id.id
-            name: album.id.id
+            id: "share-" + id
+            name: id
             placeholder: 'name@domain.com; name@domain.com'
           $field.appendTo $group
 
@@ -170,17 +197,19 @@ do ->
 
         access = {}
         $form.find('textarea').each ->
-          access[$(@).attr 'name'] = $(@).val().split(';')
+          access[$(@).attr 'name'] = $(@).val().split /[\n\r\t ;,]/
 
-        saveAccess access, -> Route.go '/'
+        share access, -> Route.go '/'
 
         false
           
       render $form
       
     # Display the contents of an album
-    Route.register "/album/*", (args,render) -> 
-      get args[0], (album) ->
+    Route.register "/album/*", (args,render) ->
+
+      id = args[0]      
+      get id, (album) ->
 
         $page = $ '<div/>'
 
@@ -190,37 +219,48 @@ do ->
         if album.id.access == 'PUT'
           $name.before '<p class="pull-right text-muted">Drop pictures here to upload them</p>'
           Picture.onDropFile = (f) ->
-            getAlbum = (next) -> get(album.id.id,next)
-            Picture.upload f, getAlbum, (id) ->
+            getAlbum = (next) -> getProof(id,next)
+            Picture.upload f, getAlbum, ->
+
+        # This function returns the full-page gallery (and creates it, if missing).
 
         getTheGallery = ->
+          
           $('#empty').remove() 
           $t = $('#gallery')
+
           if $t.length == 0
+
             $t = $("<div id=gallery class='row'/>").appendTo $page
+
             gal = new Gallery($t)
             gal.onLargePicture.push (pic,setUrl) ->
-              resize pic.$img[0], pic.proof, album, (result) ->
-                setUrl result.thumb
+              resize pic.$img[0], pic.proof, album, (r) ->
+                setUrl r.thumb if r != null
+
             $t.data 'gallery', gal    
             gal
+            
           else
+
             $t.data 'gallery'
 
-        getPictures album.id.id, (pics) ->
+        # Grab all pictures and add them to the gallery.
 
-          if pics.pictures.length == 0
+        getPictures id, (pics) ->
+
+          if pics.length == 0
 
             $page.append("<div id=empty class='well empty'>No pictures in this album</div>")
 
           else
 
             gal = getTheGallery()              
-            for picture in pics.pictures
+            for picture in pics
               gal.addPicture picture
 
-          Picture.onUploadFinished.push (album2,picture) ->
-            return if album2.id.id != album.id.id
+          Picture.onUploadFinished.push (album,picture) ->
+            return if album.id.id != id
             gal = getTheGallery()
             gal.addPicture picture
                       
