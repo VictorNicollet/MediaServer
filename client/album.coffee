@@ -258,7 +258,7 @@ do ->
 
             gal = new Gallery($t)
             gal.onLargePicture.push (pic,setUrl) ->
-              resize pic.$img[0], pic.proof, album, (r) ->
+              resize pic.$i[0], pic.data, album, (r) ->
                 setUrl r.thumb if r != null
 
             gal.wrap = (p) ->
