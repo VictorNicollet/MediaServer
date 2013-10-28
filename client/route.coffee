@@ -46,14 +46,14 @@
     history.pushState null, null, path
     Route.dispatch path
 
-
 # --------------------
 # On HTML5 browsers...
- 
+
 if 'pushState' of history
 
   # When state is popped, use the current path to dispatch 
-  @onpopstate = (event) ->
+  @onpopstate = (event) ->    
+    dispatched = true
     do Route.dispatch
 
   # React to the event
@@ -66,8 +66,6 @@ if 'pushState' of history
 # ----------------------
 # On earlier browsers...
  
-else
-
-  $ ->
-    do Route.dispatch
+$ ->
+  do Route.dispatch
    
