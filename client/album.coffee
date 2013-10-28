@@ -141,9 +141,9 @@ do ->
 
     # Display the list of albums
     Route.register "/", (args,render) ->
-      $page = $ "<table class='table'/>"
+      $page = $ "<table class='table album'/>"
 
-      $head = $ "<thead><tr><td><h2>Albums</h2></tr></td><thead>"
+      $head = $ "<thead><tr><td colspan=2><h2>Albums</h2></tr></td><thead>"
       $head.appendTo $page
 
       $list = $ "<tbody/>"      
@@ -156,10 +156,14 @@ do ->
           $link.appendTo $list
           if isAdmin
             count = album.get.length + album.put.length
-            share = if count == 0 then "" else
-              if count == 1 then "Shared with 1 person" else "Shared with #{count} people"
-            $shared = $('<span class="text-muted pull-right"/>').text share
-            $shared.appendTo $link.find 'td'                
+            if count > 0
+              share = if count == 1 then "Shared with 1 person" else "Shared with #{count} people"
+              $shared = $('<span class="text-muted pull-right"/>').text share
+              $shared.appendTo $link.find 'td'
+          $size = $('<td class=rowsize>').prependTo $link
+          $('<span/>').text(album.size || '').appendTo $size
+          if album.thumb != null
+            $('<img/>').attr('src',album.thumb).appendTo $link.find 'a'
       
         if isAdmin
 
