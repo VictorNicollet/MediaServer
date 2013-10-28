@@ -57,8 +57,6 @@ class MutexHash
     # resource is currently locked: enqueue the action, it will
     # be run when the lock is released.     
 
-    console.log @_hashes
-
     if key of @_hashes
       @_hashes[key].push wrapped
     else
