@@ -149,7 +149,13 @@ class AlbumSet
   allForClient: (email) ->
     albums = (@forClient album, email for album in @_albums)
     album for album in albums when album != null
-                                            
+
+  # Touch all the albums inside
+
+  touch: ->
+    ids = (Proof.make { id: album.id, access: 'GET' } for album in @_albums)
+    Album.touch ids 
+                                                                                                            
   # Turn the album set into a JSON representation that can be saved to
   # disk. The returned representation can be passed back to the
   # constructor.
@@ -186,10 +192,7 @@ class AlbumSet
 
   cacheAlbumInfo: (album) ->
     id = album.id()
-    console.log album
     for innerAlbum in @_albums when innerAlbum.id == id
-
-      console.log innerAlbum
       
       size = album.pictureCount() 
       if innerAlbum.size != size
@@ -200,8 +203,6 @@ class AlbumSet
       if innerAlbum.thumb != thumb
         innerAlbum.thumb = thumb
         @_changed = true
-
-      console.log innerAlbum
 
       return
 

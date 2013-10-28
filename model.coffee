@@ -76,5 +76,13 @@ module.exports.define = (theModule,theClass,getUrl) ->
   
     Store.updateJSON url, realUpdate, realNext
 
+  # Loads the specified instances, calls the "touch" function, then calls
+  # onUpdate on each instance.
 
-  
+  theModule.exports.touch = (ids) ->
+    for id in ids
+      theModule.exports.get id, (err,obj) ->
+        return if err || obj == null
+        do obj.touch if 'touch' of obj
+        doOnUpdate obj 
+

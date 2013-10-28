@@ -4,7 +4,9 @@ api = require './api'
 proof = require './proof'
 AlbumSet = require './models/album-set'
 Album = require './models/album'
-                
+
+setTimeout (-> AlbumSet.touch([''])), 1000
+                                                
 module.exports.install = (app,next) ->
 
   # Return the list of all available albums
