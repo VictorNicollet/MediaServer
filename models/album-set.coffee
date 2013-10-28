@@ -71,12 +71,14 @@ class AlbumSet
 
     # Use a canonical form for arrays to correctly detect
     # changes.
+    
+    get = (email.trim() for email in get when email.trim() != "")
     do get.sort
+
+    put = (email.trim() for email in put when email.trim() != "")
     do put.sort
 
     album = @get id
-
-    console.log album
     
     return if album == null
 

@@ -159,9 +159,8 @@ do ->
           $shared = $('<td class=text-muted/>').appendTo $link
           if isAdmin
             count = album.get.length + album.put.length
-            if count > 0
-              share = if count == 1 then "Shared with 1 person" else "Shared with #{count} people"
-              $shared.text share
+            if count > 0              
+              $shared.text if count == 1 then "Shared with 1 person" else "Shared with #{count} people"
 
           $size = $('<td class=rowsize>').prependTo $link
           $('<span/>').text(album.size || '').appendTo $size
