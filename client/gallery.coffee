@@ -22,7 +22,7 @@ class Gallery
     pic =
       data: p
       started: false
-      $w: @wrap p
+      $w: @wrap p, @pictures.length
 
     pic.$i = $(img).appendTo pic.$w 
     

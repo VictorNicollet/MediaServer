@@ -261,9 +261,9 @@ do ->
               resize pic.$i[0], pic.data, album, (r) ->
                 setUrl r.thumb if r != null
 
-            gal.wrap = (p) ->
-              $('<a href="javascript:void(0)"/>').click ->
-                new Slideshow getCachedPics id
+            gal.wrap = (p,i) ->
+              $('<a href="javascript:void(0)"/>').click ->                               
+                new Slideshow getCachedPics(id), i 
 
             $t.data 'gallery', gal    
             gal
