@@ -5,7 +5,8 @@
     "express": "3.1.x",
     "coffee-script": "1.2.x",
     "browserid-verify": "0.1.x",
-    "aws-sdk": "1.5.x"
+    "aws-sdk": "1.5.x",
+    "poplib": "0.1.x"
   },
   "engines": {
     "node": "0.10.x",
