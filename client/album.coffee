@@ -143,7 +143,7 @@ do ->
     Route.register "/", (args,render) ->
       $page = $ "<table class='table album'/>"
 
-      $head = $ "<thead><tr><td colspan=2><h2>Albums</h2></tr></td><thead>"
+      $head = $ "<thead><tr><td colspan=3><h2>Albums</h2></tr></td><thead>"
       $head.appendTo $page
 
       $list = $ "<tbody/>"      
@@ -151,17 +151,21 @@ do ->
       loadAll (list) ->
 
         for album in list
+
           $link = $ "<tr><td><a/></td></tr>"
           $link.find("a").attr("href","/album/"+album.id.id).text(album.name)
           $link.appendTo $list
+
+          $shared = $('<td class=text-muted/>').appendTo $link
           if isAdmin
             count = album.get.length + album.put.length
             if count > 0
               share = if count == 1 then "Shared with 1 person" else "Shared with #{count} people"
-              $shared = $('<span class="text-muted pull-right"/>').text share
-              $shared.appendTo $link.find 'td'
+              $shared.text share
+
           $size = $('<td class=rowsize>').prependTo $link
           $('<span/>').text(album.size || '').appendTo $size
+
           if album.thumb != null
             $('<img/>').attr('src',album.thumb).appendTo $link.find 'a'
       
