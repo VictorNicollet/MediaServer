@@ -34,7 +34,7 @@ class MutexHash
       
     wrapped = (unlock) =>
       try
-        setTimeout(-> finish unlock, @timeout)
+        setTimeout (-> finish unlock), @timeout
         action (err,res) ->
           finish unlock 
           next err, res
@@ -56,6 +56,8 @@ class MutexHash
     # If there is a waiting list bound to the resource, then that
     # resource is currently locked: enqueue the action, it will
     # be run when the lock is released.     
+
+    console.log @_hashes
 
     if key of @_hashes
       @_hashes[key].push wrapped
