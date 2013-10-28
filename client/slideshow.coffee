@@ -1,19 +1,28 @@
 class Slideshow
 
-  constructor: (pics,@gap = 10) ->
+  constructor: (pics,@c = 0,@gap = 10) ->
 
+    # Display animation versioning
     @v = 0
 
+    # All pictures displayed in this slideshow
+    @pics = pics
+    
+    # Root object
     @$ = $ '#slideshow'
     if @$.length == 0
       @$ = $('<div id=slideshow/>').appendTo('body')
       @$.click (e) =>
         if e.target == @$[0] || $(e.target).is('img')
           @$.remove()
+          
+      $('<a id=slideshow-prev href="javascript:void(0)"><span>&lt;</span></a>').appendTo(@$).click =>
+        @display(@c - 1) if @c > 0 
 
-    @pics = pics
-
-    @display 0
+      $('<a id=slideshow-next href="javascript:void(0)"><span>&gt;</span></a>').appendTo(@$).click =>
+        @display(@c + 1) if @c < @pics.length - 1 
+  
+    @display @c
 
   # Display an item centered in the middle of the screen.
 
@@ -40,10 +49,13 @@ class Slideshow
     show = =>
       if v == @v
         $item.css({position:'absolute',left:x,top:y,width:w,height:h}).fadeIn('fast')
+        @$c.remove() if @$c
         @$c = $item
+      else
+        $item.remove()
 
-    if @$c && @$c.is(':visible')
-      @$c.fadeOut 'fast', show    
+    if @$c
+      @$c.fadeOut 'fast', show        
     else
       do show
     
@@ -58,6 +70,9 @@ class Slideshow
   display: (i) ->
 
     do @load
+
+    # Index of currently displayed picture.
+    @c = i
     
     pic = @pics[i]
     img = document.createElement('img')

@@ -9,5 +9,39 @@
 }
 
 #slideshow img {
-  posiiton: absolute;
+  position: absolute;
 }
+
+#slideshow-prev { left: 0 }
+#slideshow-next { right: 0 }
+
+#slideshow-prev, #slideshow-next {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 64px;
+  opacity: 0.5;
+  display: block;
+  transition: opacity 0.5s;
+}
+
+#slideshow-prev span, #slideshow-next span {
+  margin: auto;
+  position: absolute;
+  display: block;
+  height: 30px;
+  line-height: 30px;
+  width: 64px;
+  top: 0;
+  bottom: 0;
+  text-align: center;
+  font-size: 30px;
+  text-decoration: none;
+  color: #888;
+  font-weight: bold;
+}
+
+#slideshow-prev:hover, #slideshow-next:hover {
+  opacity: 1;
+}
+
