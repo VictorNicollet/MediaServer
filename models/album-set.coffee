@@ -56,10 +56,14 @@ class AlbumSet
   # alter its value unless you set the `_changed` flag.
   
   get: (id) ->
-    for album in @_albums
-      return album if album.id == id
-    null
-
+    try
+      id = parseInt(id,10) if typeof id == 'string'
+      for album in @_albums
+        return album if album.id == id
+      null
+    catch exn
+      null
+    
   # Share an individual album. This consists in changing the
   # album's `get` and `put` lists.
 
@@ -71,6 +75,9 @@ class AlbumSet
     do put.sort
 
     album = @get id
+
+    console.log album
+    
     return if album == null
 
     @_changed = @_changed ||
