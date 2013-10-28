@@ -12,14 +12,19 @@ class Gallery
     @pending = 0
     @$target.after "<div class='gallery-loading'>Loading...</div>"
 
-  addPicture: (picture) ->
+  wrap: (p) -> $ '<div/>'
 
-    img = document.createElement 'img'
+  addPicture: (p) ->
+
+    mk = -> document.createElement 'img'
+    img = mk()
 
     pic =
-      proof: picture
+      data: p
       started: false
-      $img: $ img
+      $w: @wrap p
+
+    pic.$i = $(img).appendTo pic.$w 
     
     unfit = @pictures.length
     @pictures.push pic
@@ -31,7 +36,7 @@ class Gallery
       if img.naturalHeight > @maxHeight || img.naturalWidth > @maxWidth
         for f in @onLargePicture
           f pic, (url) ->
-            img2 = document.createElement 'img'
+            img2 = mk()
             img2.onload = ->
               $i = $ img2
               $i.css
@@ -39,9 +44,9 @@ class Gallery
                 height: img.height
                 float: "left"
                 marginRight: $(img).css 'marginRight'
-              $i.insertBefore pic.$img
-              pic.$img.remove()
-              pic.$img = $i
+              $i.insertBefore pic.$i
+              pic.$i.remove()
+              pic.$i = $i
             img2.src = url            
       @unfit unfit
       do @start
@@ -59,7 +64,7 @@ class Gallery
       continue if picture.started
       return if @pending >= @maxPending
       picture.started = true
-      picture.$img[0].src = picture.proof.thumb
+      picture.$i[0].src = picture.data.thumb
       ++@pending
       
   # Get the optimum height starting at 'next' and grabbing as many
@@ -130,12 +135,15 @@ class Gallery
 
     while count-- > 0
       pic = @pictures[@next++]
-      pic.$img.css
+      pic.$i.css
+        height: height
+        width: "100%"
+      pic.$w.css
         float: "left"
         height: height
         width: height * pic.ratio
         marginRight: if count == 0 then 0 else @gap
-      pic.$img.appendTo $line
+      pic.$w.appendTo $line
       $line.fadeIn 1000
       
     do @fitAll    

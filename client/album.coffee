@@ -13,13 +13,28 @@ do ->
   isAdmin = false
 
   # The model stores elementary information about albums, such as the name.
-  # It also stores model identifiers (along with their proofs). It does not,
-  # however, store album pictures: these are queried every single time.
+  # It also stores model identifiers (along with their proofs). 
 
   albumById = {}
 
   cache = (a) -> albumById[a.id.id] = a
 
+  # This cache stores album pictures. However, it only caches a single album's
+  # contents at any given time.
+
+  picsById = {}
+
+  cachePics = (id,pictures) ->
+    picsById = {}
+    picsById[id] = pictures
+
+  getCachedPics = (id) ->
+    if id of picsById then picsById[id] else null
+
+  appendCachedPic = (id,picture) -> 
+    if id of picsById
+      picsById[id].push picture
+      
   # Loads or reloads all albums. Also determines whether the user is an
   # administrator.
    
@@ -73,7 +88,7 @@ do ->
     getProof id, (id) ->
       API.requests.start (end) ->
         API.post "album/pictures", { album: id }, (r) ->
-          next r.pictures
+          next cachePics id.id, r.pictures
           do end
 
   # Save access sharing
@@ -238,6 +253,10 @@ do ->
               resize pic.$img[0], pic.proof, album, (r) ->
                 setUrl r.thumb if r != null
 
+            gal.wrap = (p) ->
+              $('<a href="javascript:void(0)"/>').click ->
+                new Slideshow getCachedPics id
+
             $t.data 'gallery', gal    
             gal
             
@@ -261,6 +280,7 @@ do ->
 
           Picture.onUploadFinished.push (id2,picture) ->
             return if id2.toString() != id
+            appendCachedPic id, picture
             gal = getTheGallery()
             gal.addPicture picture
                       

@@ -24,6 +24,20 @@ Store = require './store'
 
 module.exports.define = (theModule,theClass,getUrl) ->
 
+  # These functions are run in parallel after an update occurs.
+  # `runOnUpdate(f)` registers function to be called. 
+
+  onUpdate = []
+
+  doOnUpdate = (obj) ->
+    f obj for f in onUpdate
+        
+  theModule.exports.runOnUpdate = (f) ->
+    onUpdate.push f
+
+  # Get an instance using a proof. The proof may be the identifier
+  # itself, or have an 'id' member. 
+
   theModule.exports.get = (proof,next) ->
     id = if typeof proof == 'object' && 'id' of proof then proof.id else proof
     url = getUrl id
@@ -31,12 +45,17 @@ module.exports.define = (theModule,theClass,getUrl) ->
       next err, null if err
       next null, new theClass(proof,true,json)
 
+  # Get an instance (same as get), apply an update function. if the update
+  # function returns a non-null object, that object is saved back to the
+  # database. Triggers `onUpdate` when an update does happen. 
+
   theModule.exports.update = (proof,update,next) ->
     
     id = if typeof proof == 'object' && 'id' of proof then proof.id else proof
     url = getUrl id
 
     theObject = null
+    theChangedObject = null
 
     realUpdate = (json,next) ->
       update new theClass(proof,false,json), (err,obj) ->
@@ -46,12 +65,16 @@ module.exports.define = (theModule,theClass,getUrl) ->
         json = null
         if obj != null && (!('hasChanged' of obj) || obj.hasChanged())
           json = obj.serialize()
-         
+          theChangedObject = obj
+        
         next null, json 
 
     realNext = (err) ->
       next err, null if err
       next null, theObject
+      doOnUpdate theChangedObject if theChangedObject != null
   
     Store.updateJSON url, realUpdate, realNext
-    
+
+
+  
