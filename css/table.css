@@ -2,6 +2,10 @@ table h2 { margin: 0 }
 td.rowsize { width: 40px; }
 td.rowsize > span { line-height: 20px; width: 20px; height: 20px; text-align: center; background: #888; color: #fff; display: block; float: right; font-size: 10px; }
 
+table.album {
+  margin-bottom: 100px;
+}
+
 table.album a { 
   display: block; 
   position: relative;
