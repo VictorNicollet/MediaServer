@@ -65,6 +65,16 @@ class Slideshow
     $l = $('<div class=gallery-loading>Loading...</div>').appendTo(@$).hide()
     @center $l
 
+  # Precache picture `i` in the list.
+
+  precache: (i) ->
+
+    pic = @pics[i]
+    img = document.createElement('img')
+    img.onload = -> $(img).remove()
+    img.src = pic.url
+    $(img).appendTo(@$).hide()
+
   # Display picture `i` in the list.
     
   display: (i) ->
@@ -81,7 +91,12 @@ class Slideshow
       # Resize image to fit on screen
       w = img.naturalWidth
       h = img.naturalHeight
-      @center $(img), w, h 
+      @center $(img), w, h
+
+      # Precache previous and next images, for
+      # higher performance
+      @precache(i-1) if i > 0 
+      @precache(i+1) if i < @pics.length - 1
       
     img.src = pic.url
     $(img).appendTo(@$).hide()
