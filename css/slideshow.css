@@ -23,6 +23,7 @@
   opacity: 0.5;
   display: block;
   transition: opacity 0.5s;
+  z-index: 20;
 }
 
 #slideshow-prev span, #slideshow-next span {
