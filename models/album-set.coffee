@@ -1,6 +1,7 @@
 require 'coffee-script'
 Proof = require '../proof'
 Model = require '../model'
+Album = require './album'
 
 # An album set contains the list of all albums available for an instance,
 # along with access and sharing rules.
@@ -32,11 +33,13 @@ class AlbumSet
     # In-memory, store the actual e-mails instead of stowing them
     # away in a contacts array
     extractContacts = (album) ->
-      get:  (json.contacts[i] for i in album.get || [])
-      put:  (json.contacts[i] for i in album.set || [])
-      id:   album.id
-      name: album.name 
-
+      get:   (json.contacts[i] for i in album.get || [])
+      put:   (json.contacts[i] for i in album.set || [])
+      id:    album.id
+      name:  album.name
+      thumb: album.thumb || null
+      size:  album.size || 0
+      
     @_changed = false
     @_admins = json.admins || []
     @_albums = (extractContacts album for album in json.albums || [])
@@ -131,6 +134,8 @@ class AlbumSet
     value =
       id: Proof.make { id: album.id, access: access }
       name: album.name
+      thumb: Album.getThumbUrl album.id, album.thumb
+      size: album.size
 
     if isAdmin
       value.get = album.get
@@ -164,10 +169,12 @@ class AlbumSet
       contactId email for email in emails when ! @isAdmin email
 
     compressAlbum = (album) ->
-      name: album.name
-      id:   album.id
-      get:  compressContacts album.get
-      put:  compressContacts album.put  
+      name:  album.name
+      id:    album.id
+      get:   compressContacts album.get
+      put:   compressContacts album.put
+      size:  album.size
+      thumb: album.thumb
       
     json =
       admins: @_admins
@@ -175,8 +182,36 @@ class AlbumSet
       contacts: contacts
     json
 
+  # Cache the information about one of the contained albums.
+
+  cacheAlbumInfo: (album) ->
+    id = album.id()
+    console.log album
+    for innerAlbum in @_albums when innerAlbum.id == id
+
+      console.log innerAlbum
+      
+      size = album.pictureCount() 
+      if innerAlbum.size != size
+        innerAlbum.size = size
+        @_changed = true
+
+      thumb = album.albumThumbnail()
+      if innerAlbum.thumb != thumb
+        innerAlbum.thumb = thumb
+        @_changed = true
+
+      console.log innerAlbum
+
+      return
+
 # -----------------
 # Install the model
 
 Model.define module, AlbumSet, () -> "albums.json"
 
+Album.runOnUpdate (album) ->
+  update = (albumSet, next) ->
+    albumSet.cacheAlbumInfo(album)
+    next null, albumSet
+  module.exports.update '', update, () ->

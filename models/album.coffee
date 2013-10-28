@@ -3,6 +3,10 @@ Store = require '../store'
 Proof = require '../proof'
 Model = require '../model'
 
+getThumbUrl = (id,md5) ->
+  return null if md5 == null 
+  Store.getUrl "album/#{id}/thumb/#{md5}"
+  
 # An album is a set of pictures. It contains all necessary
 # information for rendering those pictures, including
 # rotation, thumbnails, and "hidden" status.
@@ -47,6 +51,10 @@ class Album
     # ...and not more
     @_thumbs.length = @_pics.length
 
+  # The identifier of this album.
+
+  id: -> @_id
+
   # Create a parseable JSON object for this album.
 
   serialize: ->
@@ -69,6 +77,17 @@ class Album
   # Has this album changed since it was loaded ?
 
   hasChanged: -> @_changed
+
+  # How many pictures are there in this album ?
+
+  pictureCount: -> @_pics.length
+
+  # What is the selected album thumbnail ?
+  # Picks the first available thumbnail.
+
+  albumThumbnail: ->
+    return thumb for thumb in @_thumbs when thumb != null
+    return null
 
   # Get the index of a picture within the album, based on the md5
   # of its original. Returns null if not found.
@@ -93,7 +112,7 @@ class Album
     url = Store.getUrl "album/#{@_id}/original/#{@_pics[i]}" 
     thumb = url
     if @_thumbs[i] != null
-      thumb = Store.getUrl "album/#{@_id}/thumb/#{@_thumbs[i]}" 
+      thumb = getThumbUrl @_id, @_thumbs[i]
     
     picture =
       id: pic
@@ -167,3 +186,5 @@ class Album
 # Install the module
 
 Model.define module, Album, (id) -> "album-#{id}.json"
+
+module.exports.getThumbUrl = getThumbUrl
