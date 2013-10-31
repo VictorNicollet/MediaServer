@@ -38,11 +38,12 @@ class Index
   # This returns (asynchronously) any sets to which the identifier
   # may belong, and from which it will need to be removed.
 
-  _prepareSetFile: (store, id, sets, next) ->
+  _prepareSetFile: (store, id, sets, next) ->    
 
     toRemove = []
             
     update = (json, next) ->
+      json = json || { sets: [] }
       sets = sets.slice 0
       for set in json.sets
         if !(set in sets)
@@ -50,7 +51,7 @@ class Index
           toRemove.push set
       next null, { sets: sets }
       
-    store.updateJSON store, @_pSets + id, update, (err) ->
+    store.updateJSON @_pSets + id, update, (err) ->
       return next err, null if err
       next null, toRemove
 
@@ -60,6 +61,8 @@ class Index
   _addToIndexFile: (store, id, set, sortkeys, data, next) ->
 
     update = (json,next) ->
+
+      json = json || { ids: [], keys: [], data: [] }
 
       # Index files can get quite big, so let's try to track changes
       # and not write an index file to storage unless relevant
@@ -138,6 +141,8 @@ class Index
 
     update = (json,next) ->
 
+      return next null, null if !json
+
       # Make sure that the identifier is part of the index file, and
       # early-out if it isn't.
   
@@ -194,10 +199,11 @@ class Index
   _cleanSetFile: (store, id, rmsets, next) ->
 
     update = (json,next) ->
+      return next null, null if !json 
       sets = (set for set in json.sets when !(set in rmsets))
       next null, (if sets.length == json.sets.length then null else { sets: sets })
       
-    store.updateJSON store, @_pSets + id, update, next
+    store.updateJSON @_pSets + id, update, next
 
   # Adds an identifier's bindings to the index. The list of keys is a list of
   # set/sort pairs.
@@ -215,7 +221,7 @@ class Index
         sortkeysBySet[keypair[0]].push keypair[1]
       else
         sortkeysBySet[keypair[0]] = [keypair[1]]
-        sets.push[keypair[0]]
+        sets.push keypair[0]
 
     @_prepareSetFile store, id, sets, (err,unsets) =>
       return next err if err
@@ -225,7 +231,7 @@ class Index
         if i == sets.length
           do next
         else
-          @_addToIndexFile store, id, sets[i], sortKeysBySet[sets[i]], data, (err) ->
+          @_addToIndexFile store, id, sets[i], sortkeysBySet[sets[i]], data, (err) ->
             return next err if err
             addLoop i+1, next
             
@@ -314,6 +320,7 @@ class Index
         out = []
         while i < e && out.length < limit
           out.push [k[i][0], data.ids[k[i][1]], data.data[k[i][1]]]
+          i++
 
         next null, out, e - s
       
