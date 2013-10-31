@@ -178,3 +178,13 @@ exports.save = (store,raw,next) ->
   
   mailparser.write raw
   mailparser.end()
+
+# Touch all the raw e-mail in a store
+
+module.exports.touchAll = (store,next) ->
+  touch = (id,next) ->
+    console.log id
+    next true
+  store.withPrefix Prefix.raw, touch, next
+
+

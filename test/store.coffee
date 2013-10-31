@@ -42,17 +42,22 @@ exports["test store#getObject on two put keys"] = (beforeExit, assert) ->
 
 # Reading through objects with glob
 
-exports["test store#glob"] = (beforeExit, assert) ->
+exports["test store#withPrefix"] = (beforeExit, assert) ->
+
+  found = []
+  ok = false
+            
   store = new Store(new Mock)
-  store.put "foo/1", content("FOO1"), (err) ->
+  store.put "foo/0", content("FOO0"), (err) ->
     store.put "bar/1", content("BAR1"), (err) ->
       store.put "barquux", content("BARQUUX"), (err) ->
         store.put "bar/2", content("BAR2"), (err) ->
-          found = []
-          each = (path) -> found.push path
+          each = (path,next) ->
+            found.push path
+            next true
           store.withPrefix "bar", each, ->
-            expect = ["bar/1","bar/2"]
-            expect.sort()
-            found.sort()            
-            assert.eql expect, found
-                  
+            ok = true
+            
+  beforeExit ->
+    assert.eql ["1","2"], found
+    assert.ok ok       

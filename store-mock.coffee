@@ -32,7 +32,7 @@ class StoreMock
     clean  = prefix.replace(/[\[\].*+?{}()|^\\$]/g,"\\$1")
     regexp = new RegExp("^"+clean)
 
-    matching = (key for key of @_keys when regexp.test key)
+    matching = (key.substring(prefix.length) for key of @_keys when regexp.test key)
     
     start = start || 0
 

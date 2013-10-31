@@ -40,7 +40,7 @@ wrapper =
     obj =
       Bucket: @bucket
       Key: @prefix + '/' + path
-    retry (n) =>
+    retry = (n) =>
       @S3.getObject obj, (err,data) ->
         if err != null
           if /^NoSuchKey/.test err
@@ -58,7 +58,7 @@ wrapper =
     obj[k] = v for k, v of theObj
     obj.Bucket = @bucket
     obj.Key = @prefix + '/' + path
-    retry (n) =>
+    retry = (n) =>
       @S3.putObject obj, (err) ->
         if err != null
           if n > 0
@@ -85,13 +85,13 @@ wrapper =
       MaxKeys: count
 
     if cursor
-      query.Marker = cursor
+      query.Marker = @prefix + '/' + prefix + '/' + cursor
 
-    @S3.listObjects query, (err,data) ->
+    @S3.listObjects query, (err,data) =>
 
       return next err, null, null if err
       
-      keys = (item.Key for item in data.Contents)
+      keys = (item.Key.substring(query.Prefix.length + 1) for item in data.Contents)
       keys.sort()
       keys.shift() if keys.length > 0 && keys[0] == cursor
 

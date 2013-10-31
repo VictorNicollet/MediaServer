@@ -66,4 +66,5 @@ poll = ->
   
 module.exports.install = (app,next) ->
   setImmediate poll
+  setImmediate -> MailRaw.touchAll store
   do next

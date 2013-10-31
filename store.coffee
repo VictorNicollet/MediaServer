@@ -194,9 +194,10 @@ class Store
   withPrefix: (prefix,each,finish = null) ->
 
     finish = finish || -> 
-    count = 20
+    count = 50
     
     processBatch = (start) =>
+      console.log "db.withPrefix #{prefix}, #{start}"
       @_db.withPrefix prefix, start, count, (err,list,end) ->
         return finish err if err
         doEach = (i) ->
@@ -205,10 +206,11 @@ class Store
               finish null
             else  
               processBatch end
-          else 
+          else
             each list[i], (keepGoing) ->
               return finish null if !keepGoing
               doEach(i+1)
+        doEach 0
             
     processBatch null
     
