@@ -32,11 +32,15 @@ module.exports.define = (theModule,theClass,getUrl) ->
   started  = 0
   finished = 0
 
-  doOnUpdate = (store, obj) ->
-    for f in onUpdate
-      ++started
-      f store, obj, -> ++finished  
-        
+  doOnUpdate = (store, obj, finished) ->
+    doLoop = (i) ->
+      if i < onUpdate.length 
+        onUpdate[i] store, obj, ->
+          doLoop(i+1)
+      else
+        do finished
+    doLoop 0
+                  
   theModule.exports.runOnUpdate = (f) ->
     onUpdate.push f
 
@@ -84,10 +88,15 @@ module.exports.define = (theModule,theClass,getUrl) ->
   # Loads the specified instances, calls the "touch" function, then calls
   # onUpdate on each instance.
 
-  theModule.exports.touch = (store,ids) ->
-    for id in ids
-      theModule.exports.get store, id, (err,obj) ->
-        return if err || obj == null
-        do obj.touch if 'touch' of obj
-        doOnUpdate store, obj 
+  theModule.exports.touch = (store,ids,next) ->
+    doLoop = (i) ->
+      if i < ids.length 
+        theModule.exports.get store, ids[i], (err,obj) ->
+          return if err || obj == null
+          do obj.touch if 'touch' of obj
+          doOnUpdate store, obj, ->
+            doLoop(i+1)
+      else if next
+        do next
+    doLoop 0 
 
