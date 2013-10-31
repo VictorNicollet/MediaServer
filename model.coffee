@@ -1,5 +1,4 @@
 require 'coffee-script'
-Store = require './store'
 
 # Sets up a model's "get" and "update" functions.
 #
@@ -22,7 +21,7 @@ Store = require './store'
 # Parameter `url(id)` should return the URL of the object with
 # identifier `id` on the persistent store.
 
-module.exports.define = (theModule,theClass,getUrl) ->
+module.exports.define = (theModule,theClass,store,getUrl) ->
 
   # These functions are run in parallel after an update occurs.
   # `runOnUpdate(f)` registers function to be called. 
@@ -41,7 +40,7 @@ module.exports.define = (theModule,theClass,getUrl) ->
   theModule.exports.get = (proof,next) ->
     id = if typeof proof == 'object' && 'id' of proof then proof.id else proof
     url = getUrl id
-    Store.getJSON url, (err,json) ->
+    store.getJSON url, (err,json) ->
       next err, null if err
       next null, new theClass(proof,true,json)
 
@@ -74,7 +73,7 @@ module.exports.define = (theModule,theClass,getUrl) ->
       next null, theObject
       doOnUpdate theChangedObject if theChangedObject != null
   
-    Store.updateJSON url, realUpdate, realNext
+    store.updateJSON url, realUpdate, realNext
 
   # Loads the specified instances, calls the "touch" function, then calls
   # onUpdate on each instance.

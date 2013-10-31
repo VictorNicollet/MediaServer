@@ -3,6 +3,9 @@ Proof = require '../proof'
 Model = require '../model'
 Album = require './album'
 
+Store = require '../store'
+store = new Store(Store.S3)
+
 # An album set contains the list of all albums available for an instance,
 # along with access and sharing rules.
 
@@ -218,7 +221,7 @@ class AlbumSet
 # -----------------
 # Install the model
 
-Model.define module, AlbumSet, () -> "albums.json"
+Model.define module, AlbumSet, store, () -> "albums.json"
 
 Album.runOnUpdate (album) ->
   update = (albumSet, next) ->

@@ -27,19 +27,20 @@ class MutexHash
     # because the action finished or because it timed out.
   
     hasFinished = false
-    finish = (unlock) ->
+    finish = (id,unlock) ->
       return if hasFinished 
       hasFinished = true
+      clearTimeout id
       do unlock
       
     wrapped = (unlock) =>
       try
-        setTimeout (-> finish unlock), @timeout
+        id = setTimeout (-> finish unlock), @timeout
         action (err,res) ->
-          finish unlock 
+          finish id, unlock 
           next err, res
       catch error
-        finish unlock
+        finish id, unlock
         throw error
 
     # This function is called whenever a lock is released. It either

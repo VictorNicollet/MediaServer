@@ -1,29 +1,43 @@
 require 'coffee-script'
 POP3Client = require 'poplib'
 
-poll = ->
+defaultConfig =
+  port: 110
+  host: 'nicollet.net'
+  user: 'victor-pop'
+  pass: 'pop3'
+
+pollNew = (config, each, next) ->
   
-  client = new POP3Client 110, 'nicollet.net',
+  client = new POP3Client config.port, config.host,
     tlserrs: false,
     enabletls: false,
     debug: true
     
   client.on 'connect', ->
-    console.log "CONNECTED!"
-    client.login "victor-pop", "pop3"
+    client.login config.user, config.pass
     
   client.on 'login', (status,raw) ->
-    console.log 'On LOGIN:', raw
     do client.list if status
 
+  toBeRetrieved = []
+  retrieveNext = ->
+    return next() if toBeRetrieved.length == 0 
+    client.retr toBeRetrieved.shift()
+    
   client.on 'list', (status, count, nbr, messages) -> 
-    console.log "Messages:", messages
     for msg, i in messages when msg
-      client.retr i
+      toBeRetrieved.push i
+    do retrieveNext  
 
   client.on 'retr', (status, nbr, data) ->
-    console.log "Data for", nbr, "is:", data
+    each data
+    do retrieveNext
+
+poll = ->
+  
+  pollNew defaultConfig, each, ->
 
 module.exports.install = (app,next) ->
   do next
-  setTimeout poll, 1000
+#  setTimeout poll, 1000

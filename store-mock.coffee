@@ -3,27 +3,33 @@ fs = require 'fs'
 
 # In-memory storage that mocks the S3 module used by `store`.
 
-buckets = {}
+class StoreMock
 
-getBucket = (bucket) ->
-  buckets[bucket] || (buckets[bucket] = {})
+  constructor: ->
+    @buckets = {}
 
-# Replacement for S3.putObject
+  getBucket: (bucket) ->
+    @buckets[bucket] || (@buckets[bucket] = {})
 
-module.exports.putObject = (obj,next) ->
-  getBucket(obj.Bucket)[obj.Key] = obj.Content
-  next null
+  # Replacement for S3.putObject
 
-# Replacement for S3.getObject
+  putObject: (obj,next) ->
+    @getBucket(obj.Bucket)[obj.Key] = obj.Body
+    next null
 
-module.exports.getObject = (obj,next) ->
-  bucket = getBucket obj.Bucket
-  if obj.Key of bucket
-    next null, bucket[obj.Key]
-  next "NoSuchKey", null
+  # Replacement for S3.getObject
 
-# Replacement for S3.getSignedUrl
+  getObject: (obj,next) ->
+    bucket = @getBucket obj.Bucket
+    if obj.Key of bucket
+      return next null, { Body: bucket[obj.Key] }
+    next "NoSuchKey", null
 
-module.exports.getSignedUrl = (obj) ->
-  'https://' + obj.Bucket + '.s3.amazonaws.com/' + obj.Key
+  # Replacement for S3.getSignedUrl
+
+  getSignedUrl: (obj) ->
+    'https://' + obj.Bucket + '.s3.amazonaws.com/' + obj.Key
+
+# Export the class as a whole
   
+module.exports = StoreMock
