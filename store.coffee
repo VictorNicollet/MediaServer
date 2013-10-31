@@ -210,3 +210,8 @@ module.exports.uploadFile = (prefix,file,next) ->
 module.exports.getUrl = (path) ->
   S3.getSignedUrl 'getObject', makeParams path
 
+# Run this module in testing mode
+
+module.exports.testMode = ->
+  S3 = require('./store-mock')
+  @
