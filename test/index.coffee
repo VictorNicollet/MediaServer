@@ -23,4 +23,21 @@ exports["test Index#add > Index#query"] = (beforeExit, assert) ->
     index.query(store,"male").run (err,list,count) ->
       assert.eql count, 1
       assert.eql list, [["victor","nicollet","Victor Nicollet"]]
+
+# Adding multiple key bindings makes them appear in queries
       
+exports["test Index#add* > Index#query"] = (beforeExit, assert) ->  
+  store = new Store(new Mock)
+  index = new Index "prefix"
+
+  index.add store, "nicollet", "Victor Nicollet", [["male","victor"],["male","nicollet"]], ->
+    index.add store, "einstein", "Albert Einstein", [["male","albert"],["male","einstein"]], ->
+      index.query(store,"male").run (err,list,count) ->
+        assert.eql count, 4
+        assert.eql list, [
+          ["albert", "einstein", "Albert Einstein"],
+          ["einstein", "einstein", "Albert Einstein"],
+          ["nicollet", "nicollet", "Victor Nicollet"],
+          ["victor", "nicollet","Victor Nicollet"]
+        ]
+

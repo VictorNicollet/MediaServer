@@ -130,6 +130,7 @@ class Index
             json.keys[i] = [keys.pop(), posOfId]
           else
             json.keys[i] = json.keys[j]
+          --i
 
       next null, if changed then json else null
 
@@ -197,6 +198,9 @@ class Index
   # for that identifier. This should be done after the removal.
 
   _cleanSetFile: (store, id, rmsets, next) ->
+
+    if rmsets.length == 0
+      return next null 
 
     update = (json,next) ->
       return next null, null if !json 
