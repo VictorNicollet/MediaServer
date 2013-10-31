@@ -9,7 +9,7 @@ Prefix =
 # Used to implement getter/setter pairs.
 
 getOrSet = (key) -> () ->
-  return @[key] if arguments.length == null
+  return @[key] if arguments.length == 0
   value = arguments[0]
   @_changeIf(@[key] != value)
   @[key] = value
@@ -47,6 +47,10 @@ class Mail
     throw "Mail #{@_id} is read-only" if @_readonly
     @_changed = true
 
+  # The identifier of this e-mail
+
+  id: -> @_id
+ 
   # Does this e-mail really exist ?
 
   exists: -> @_exists
@@ -70,7 +74,7 @@ class Mail
   # Call as a setter to update the summary.
 
   top: getOrSet '_top'
-
+ 
   # What is the from-address of this e-mail ?
   # Call as a setter to update the from-address.
 
@@ -173,3 +177,12 @@ MailRaw.runOnUpdate (store,raw,next) ->
 
   module.exports.update store, raw.id(), update, next
      
+# Touch all the e-mail info in a store
+
+module.exports.touchAll = (store,next) ->
+  touch = (id,next) ->
+    id = id.substring 0, id.length - ".json".length
+    module.exports.touch store, [{id:id}], ->
+      next true
+  store.withPrefix Prefix.meta, touch, next
+

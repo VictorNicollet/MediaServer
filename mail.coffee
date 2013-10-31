@@ -2,6 +2,7 @@ require 'coffee-script'
 POP3Client = require 'poplib'
 MailRaw = require './models/mail-raw'
 Mail = require './models/mail'
+MailBox = require './models/mail-box'
 
 Store = require './store'
 store = new Store require './s3'
@@ -68,4 +69,5 @@ poll = ->
 module.exports.install = (app,next) ->
   setImmediate poll
   setImmediate -> MailRaw.touchAll store
+  setImmediate -> Mail.touchAll store
   do next
