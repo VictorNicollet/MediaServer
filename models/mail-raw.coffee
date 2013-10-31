@@ -183,7 +183,8 @@ exports.save = (store,raw,next) ->
 
 module.exports.touchAll = (store,next) ->
   touch = (id,next) ->
-    console.log id
+    id = id.substring 0, id.length - ".json".length
+    module.exports.touch store, [{id:id}]
     next true
   store.withPrefix Prefix.raw, touch, next
 

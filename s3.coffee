@@ -53,7 +53,7 @@ wrapper =
           next null, data.Body
     retry 5
 
-  set: (path,theObj,next) ->
+  put: (path,theObj,next) ->
     obj = {}
     obj[k] = v for k, v of theObj
     obj.Bucket = @bucket
@@ -91,7 +91,7 @@ wrapper =
 
       return next err, null, null if err
       
-      keys = (item.Key.substring(query.Prefix.length + 1) for item in data.Contents)
+      keys = (item.Key.substring query.Prefix.length for item in data.Contents)
       keys.sort()
       keys.shift() if keys.length > 0 && keys[0] == cursor
 

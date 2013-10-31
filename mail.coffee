@@ -1,6 +1,7 @@
 require 'coffee-script'
 POP3Client = require 'poplib'
 MailRaw = require './models/mail-raw'
+Mail = require './models/mail'
 
 Store = require './store'
 store = new Store require './s3'
