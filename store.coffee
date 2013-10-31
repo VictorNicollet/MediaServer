@@ -189,11 +189,12 @@ class Store
       md5 = do -> 
         hash = crypto.createHash 'md5'
         hash.update content
-        md5 = hash.digest 'hex'
+        hash.digest 'hex'
       params = @_makeParams [prefix,md5].join('/'),  
         Body: content
         ContentType: file.type
-        ContentDisposition: "attachment; filename=#{file.name}"
+      if file.name
+        params.ContentDisposition = "attachment; filename=#{file.name}"
       console.log "S3.putObject #{params.Key}"
       @_putObjectRetry params, (err,data) ->
         console.log "S3.putObject #{params.Key}: #{err}" if err

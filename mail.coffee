@@ -1,5 +1,9 @@
 require 'coffee-script'
 POP3Client = require 'poplib'
+MailRaw = require './models/mail-raw'
+
+Store = require './store'
+store = new Store require './s3'
 
 defaultConfig =
   port: 110
@@ -12,7 +16,7 @@ pollNew = (config, each, next) ->
   client = new POP3Client config.port, config.host,
     tlserrs: false,
     enabletls: false,
-    debug: true
+    debug: false
     
   client.on 'connect', ->
     client.login config.user, config.pass
@@ -31,13 +35,15 @@ pollNew = (config, each, next) ->
     do retrieveNext  
 
   client.on 'retr', (status, nbr, data) ->
-    each data
-    do retrieveNext
+    each data, retrieveNext
 
 poll = ->
   
+  each = (data,next) ->
+    MailRaw.save store, data, next
+         
   pollNew defaultConfig, each, ->
 
 module.exports.install = (app,next) ->
   do next
-#  setTimeout poll, 1000
+  setTimeout poll, 1000
