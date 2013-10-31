@@ -4,11 +4,12 @@ require 'coffee-script'
 #
 # A model is a class with the following interface:
 # 
-#  - `constructor(id,readonly,json)` is called when loading a model
+#  - `constructor(id,readonly,json,store)` is called when loading a model
 #    instance. The 'id' was provided to either the `get` or
 #    `update` function. `readonly` is true if the model was loaded
 #    by a `get`. The `json` is the data loaded from the persistent
-#    store, `null` if not found.
+#    store, `null` if not found. `store` is the store from which the model
+#    was loaded.
 #
 #  - `@serialize()` should return a JSON representation of the
 #    object in the format expected by the constructor. This JSON
@@ -21,15 +22,20 @@ require 'coffee-script'
 # Parameter `url(id)` should return the URL of the object with
 # identifier `id` on the persistent store.
 
-module.exports.define = (theModule,theClass,store,getUrl) ->
+module.exports.define = (theModule,theClass,getUrl) ->
 
   # These functions are run in parallel after an update occurs.
   # `runOnUpdate(f)` registers function to be called. 
 
   onUpdate = []
 
-  doOnUpdate = (obj) ->
-    f obj for f in onUpdate
+  started  = 0
+  finished = 0
+
+  doOnUpdate = (store, obj) ->
+    for f in onUpdate
+      ++started
+      f store, obj, -> ++finished  
         
   theModule.exports.runOnUpdate = (f) ->
     onUpdate.push f
@@ -37,18 +43,18 @@ module.exports.define = (theModule,theClass,store,getUrl) ->
   # Get an instance using a proof. The proof may be the identifier
   # itself, or have an 'id' member. 
 
-  theModule.exports.get = (proof,next) ->
+  theModule.exports.get = (store,proof,next) ->
     id = if typeof proof == 'object' && 'id' of proof then proof.id else proof
     url = getUrl id
     store.getJSON url, (err,json) ->
       next err, null if err
-      next null, new theClass(proof,true,json)
+      next null, new theClass(proof,true,json,store)
 
   # Get an instance (same as get), apply an update function. if the update
   # function returns a non-null object, that object is saved back to the
   # database. Triggers `onUpdate` when an update does happen. 
 
-  theModule.exports.update = (proof,update,next) ->
+  theModule.exports.update = (store,proof,update,next) ->
     
     id = if typeof proof == 'object' && 'id' of proof then proof.id else proof
     url = getUrl id
@@ -57,7 +63,7 @@ module.exports.define = (theModule,theClass,store,getUrl) ->
     theChangedObject = null
 
     realUpdate = (json,next) ->
-      update new theClass(proof,false,json), (err,obj) ->
+      update new theClass(proof,false,json,store), (err,obj) ->
         
         theObject = obj
       
@@ -71,17 +77,17 @@ module.exports.define = (theModule,theClass,store,getUrl) ->
     realNext = (err) ->
       next err, null if err
       next null, theObject
-      doOnUpdate theChangedObject if theChangedObject != null
+      doOnUpdate store, theChangedObject if theChangedObject != null
   
     store.updateJSON url, realUpdate, realNext
 
   # Loads the specified instances, calls the "touch" function, then calls
   # onUpdate on each instance.
 
-  theModule.exports.touch = (ids) ->
+  theModule.exports.touch = (store,ids) ->
     for id in ids
-      theModule.exports.get id, (err,obj) ->
+      theModule.exports.get store, id, (err,obj) ->
         return if err || obj == null
         do obj.touch if 'touch' of obj
-        doOnUpdate obj 
+        doOnUpdate store, obj 
 

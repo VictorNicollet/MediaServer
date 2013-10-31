@@ -3,10 +3,14 @@ fs = require 'fs'
 
 # In-memory storage that mocks the S3 module used by `store`.
 
+current = 1
+
 class StoreMock
 
   constructor: ->
     @buckets = {}
+    @bucket = "test"
+    @prefix = "" + current++
 
   getBucket: (bucket) ->
     @buckets[bucket] || (@buckets[bucket] = {})
@@ -29,6 +33,9 @@ class StoreMock
 
   getSignedUrl: (obj) ->
     'https://' + obj.Bucket + '.s3.amazonaws.com/' + obj.Key
+
+  toString: ->
+    "Mock DB #{@prefix}"
 
 # Export the class as a whole
   

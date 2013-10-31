@@ -5,13 +5,18 @@ proof = require './proof'
 AlbumSet = require './models/album-set'
 Album = require './models/album'
 
-setTimeout (-> AlbumSet.touch([''])), 1000
+# By default, store everything on S3
+
+store = new Store require "./s3"
+
+# Touch all the albums at startup
+setImmediate -> AlbumSet.touch store, ['']
                                                 
 module.exports.install = (app,next) ->
 
   # Return the list of all available albums
   api.get app, 'albums', (req, fail, json) ->
-    AlbumSet.get '', (err,albumSet) ->
+    AlbumSet.get store, '', (err,albumSet) ->
       return fail err if err
       json
         admin:  albumSet.isAdmin req.email
@@ -30,7 +35,7 @@ module.exports.install = (app,next) ->
         
       next null, albumSet
 
-    AlbumSet.update '', update, (err,albumSet) ->
+    AlbumSet.update store, '', update, (err,albumSet) ->
       return fail err if err
       json { success: true }
 
@@ -51,7 +56,7 @@ module.exports.install = (app,next) ->
 
       next null, albumSet
 
-    AlbumSet.update '', update, (err,albumSet) ->
+    AlbumSet.update store, '', update, (err,albumSet) ->
       return fail err if err
       json { album: albumSet.forClient album, req.email }
 
@@ -95,7 +100,7 @@ module.exports.install = (app,next) ->
         thePicture = pic if !err
         next err, album
 
-    Album.update id, update, (err,album) ->
+    Album.update store, id, update, (err,album) ->
       return fail err if err
       json { picture: thePicture }       
 
@@ -125,7 +130,7 @@ module.exports.install = (app,next) ->
         thePicture = picture if !err
         next err, album
 
-    Album.update id, update, (err,album) ->
+    Album.update store, id, update, (err,album) ->
       return fail err if err
       json { picture: thePicture}
       

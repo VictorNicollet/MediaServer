@@ -1,32 +1,6 @@
 require 'coffee-script'
-AWS = require 'aws-sdk'
 crypto = require 'crypto'
-fs = require 'fs'
 MutexHash = require './mutex-hash'
-
-# Configuration
-
-bucket = 'docs.nicollet.net'
-
-if fs.existsSync "./s3.json"
-  prefix = 'dev'
-  AWS.config.loadFromPath './s3.json'
-else
-  prefix = 'alix.et.victor'
-  AWS.config.update
-    region: "eu-west-1"
-    accessKeyId: process.env.S3KEY
-    secretAccessKey: process.env.S3SECRET
-
-# Build a basic `{Bucket,Key}` object from a path. An optional
-# second parameter takes an object to be extended instead of
-# creating a new one.
-
-makeParams = (path,extend=null) ->
-  extend = {} if extend == null
-  extend.Bucket = bucket
-  extend.Key = prefix + '/' + path
-  extend
 
 # It is forbidden to run simultaneous updates on the same document
 # (since this would lead to one update being ignored by the other)
@@ -70,6 +44,16 @@ retry = (action,retries=3) ->
 
 class Store
 
+  # Build a basic `{Bucket,Key}` object from a path. An optional
+  # second parameter takes an object to be extended instead of
+  # creating a new one.
+
+  _makeParams: (path,extend=null) ->
+    extend = {} if extend == null
+    extend.Bucket = @_db.bucket
+    extend.Key = @_db.prefix + '/' + path
+    extend
+
   # Use a database driver internally
    
   constructor: (@_db) ->
@@ -98,7 +82,7 @@ class Store
   # update function realizes there is no need to perform the update.
 
   put: (path,getContent,next) ->
-    params = makeParams path
+    params = @_makeParams path
     withLock params, next, (next) =>
       getContent (err,content) =>       
         return next err,  null if err
@@ -115,7 +99,7 @@ class Store
   # returns a buffer with the object contents.
  
   get: (path,next) ->
-    params = makeParams path
+    params = @_makeParams path
     console.log "S3.getObject #{params.Key}"
     @_getObjectRetry params, (err,data) =>
       err = null if /^NoSuchKey/.test err
@@ -206,7 +190,7 @@ class Store
         hash = crypto.createHash 'md5'
         hash.update content
         md5 = hash.digest 'hex'
-      params = makeParams [prefix,md5].join('/'),  
+      params = @_makeParams [prefix,md5].join('/'),  
         Body: content
         ContentType: file.type
         ContentDisposition: "attachment; filename=#{file.name}"
@@ -225,7 +209,8 @@ class Store
   getUrl: (path) ->
     @_db.getSignedUrl 'getObject', makeParams path
 
-Store.S3 = new AWS.S3()
+  toString: ->
+    "Store @ " + @_db.toString()
 
 # Export the class directly
 

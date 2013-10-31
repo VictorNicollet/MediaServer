@@ -3,9 +3,6 @@ Proof = require '../proof'
 Model = require '../model'
 Album = require './album'
 
-Store = require '../store'
-store = new Store(Store.S3)
-
 # An album set contains the list of all albums available for an instance,
 # along with access and sharing rules.
 
@@ -24,7 +21,7 @@ class AlbumSet
   # The optional JSON provided to the constructor has the same format
   # as that returned by `serialize`.
 
-  constructor: (proof,@_readonly,json = null) ->
+  constructor: (proof,@_readonly,json = null,@_store) ->
 
     # If no JSON is provided, this means the object does not exist
     # yet, so assume default values
@@ -166,8 +163,7 @@ class AlbumSet
 
   touch: ->
     ids = (Proof.make { id: album.id, access: 'GET' } for album in @_albums)
-    Album.touch ids 
-                                                                                                            
+    Album.touch @_store, ids                                                                                                           
   # Turn the album set into a JSON representation that can be saved to
   # disk. The returned representation can be passed back to the
   # constructor.
@@ -221,10 +217,10 @@ class AlbumSet
 # -----------------
 # Install the model
 
-Model.define module, AlbumSet, store, () -> "albums.json"
+Model.define module, AlbumSet, () -> "albums.json"
 
-Album.runOnUpdate (album) ->
+Album.runOnUpdate (store,album,next) ->
   update = (albumSet, next) ->
     albumSet.cacheAlbumInfo(album)
     next null, albumSet
-  module.exports.update '', update, () ->
+  module.exports.update store, '', update, next

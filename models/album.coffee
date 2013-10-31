@@ -1,11 +1,8 @@
 require 'coffee-script'
-Store = require '../store'
 Proof = require '../proof'
 Model = require '../model'
 
-store = new Store(Store.S3)
-
-getThumbUrl = (id,md5) ->
+getThumbUrl = (store,id,md5) ->
   return null if md5 == null 
   store.getUrl "album/#{id}/thumb/#{md5}"
   
@@ -35,7 +32,7 @@ class Album
   # the album. Use `isReadable` and `isWritable` to test for
   # access righs.
 
-  constructor: (proof,@_readonly,json = null) ->
+  constructor: (proof,@_readonly,json,@_store) ->
 
     # If no JSON is provided, this means the object does not exist
     # yet, so assume default values
@@ -111,10 +108,10 @@ class Album
     return null if i == null || i < 0 || i >= @_pics.length
 
     pic = @_pics[i]
-    url = store.getUrl "album/#{@_id}/original/#{@_pics[i]}" 
+    url = @_store.getUrl "album/#{@_id}/original/#{@_pics[i]}" 
     thumb = url
     if @_thumbs[i] != null
-      thumb = getThumbUrl @_id, @_thumbs[i]
+      thumb = getThumbUrl @_store, @_id, @_thumbs[i]
     
     picture =
       id: pic
@@ -147,7 +144,7 @@ class Album
     if @_pics.length >= @maxPictures
       return next "Maximum album size reached.", null
 
-    store.uploadFile "album/#{@_id}/original", file, (err,md5) =>
+    @_store.uploadFile "album/#{@_id}/original", file, (err,md5) =>
 
       next err, null if err
 
@@ -178,7 +175,7 @@ class Album
       name: 'thumb.jpg'
       content: thumb
 
-    store.uploadFile "album/#{@_id}/thumb", file, (err,md5) =>
+    @_store.uploadFile "album/#{@_id}/thumb", file, (err,md5) =>
       next err, null if err
       @_changed = true if @_thumbs[i] != md5
       @_thumbs[i] = md5
@@ -187,6 +184,6 @@ class Album
 # ------------------
 # Install the module
 
-Model.define module, Album, store, (id) -> "album-#{id}.json"
+Model.define module, Album, (id) -> "album-#{id}.json"
 
 module.exports.getThumbUrl = getThumbUrl
