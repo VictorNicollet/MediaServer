@@ -41,3 +41,20 @@ exports["test Index#add* > Index#query"] = (beforeExit, assert) ->
           ["victor", "nicollet","Victor Nicollet"]
         ]
 
+# Adding and removing a key binding
+
+exports["test Index#add** > Index#query"] = (beforeExit, assert) ->
+  store = new Store(new Mock)
+  index = new Index "prefix"
+
+  index.add store, "nicollet", "Victor Nicollet", [["JavaScript","5"]], ->
+    index.add store, "nicollet", "Victor Nicollet", [["CoffeeScript","4"]], ->
+
+      index.query(store,"JavaScript").run (err,list,count) ->
+        assert.eql list, []
+        assert.eql count, 0
+ 
+      index.query(store,"CoffeeScript").run (err,list,count) ->
+        assert.eql count, 1
+        assert.eql list, [["4","nicollet","Victor Nicollet"]]
+
