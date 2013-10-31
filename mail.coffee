@@ -10,8 +10,13 @@ defaultConfig =
   host: 'nicollet.net'
   user: 'victor-pop'
   pass: 'pop3'
+  batch: 30
 
-pollNew = (config, each, next) ->
+# Reads `config.batch` e-mails from the remote host, stores them 
+# locally and (if local storage succeeded) deletes them from the
+# remote host.
+ 
+grabMail = (config, next) ->
   
   client = new POP3Client config.port, config.host,
     tlserrs: false,
@@ -26,23 +31,33 @@ pollNew = (config, each, next) ->
 
   toBeRetrieved = []
   retrieveNext = ->
-    return next() if toBeRetrieved.length == 0 
-    client.retr toBeRetrieved.shift()
+    if toBeRetrieved.length == 0
+      client.quit() 
+    else
+      client.retr toBeRetrieved.shift()
     
   client.on 'list', (status, count, nbr, messages) -> 
     for msg, i in messages when msg
       toBeRetrieved.push i
+      break if toBeRetrieved.length > config.batch
     do retrieveNext  
 
   client.on 'retr', (status, nbr, data) ->
-    each data, retrieveNext
+    MailRaw.save store, data, (err) ->
+      if err
+        do retrieveNext
+      else
+    client.dele nbr
 
-poll = ->
-  
-  each = (data,next) ->
-    MailRaw.save store, data, next
-         
-  pollNew defaultConfig, each, ->
+  client.on 'dele', () ->
+    do retrieveNext
+
+  client.on 'quit', () ->
+    do next 
+        
+poll = ->  
+  grabMail defaultConfig, ->
+    console.log "POP3 polling done !"
 
 module.exports.install = (app,next) ->
   do next
