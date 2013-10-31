@@ -128,7 +128,8 @@ MailRaw.runOnUpdate (store,raw,next) ->
       .parts(raw.parts.length)
 
     if raw.text
-      mail.top(if raw.text.length > 200 then raw.text.substring(0,200) else raw.text)
+      text = raw.text.trim().replace(/\s+/g,' ')
+      mail.top(if text.length > 200 then text.substring(0,200) else text)
 
     date = do ->
       input = raw.header "date"
