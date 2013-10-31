@@ -8,7 +8,8 @@
     "aws-sdk": "1.5.x",
     "poplib": "0.1.x",
     "expresso": "0.9.x",
-    "mailparser": "0.3.x"
+    "mailparser": "0.3.x",
+    "deep-equal": "0.1.x"
   },
   "engines": {
     "node": "0.10.x",
