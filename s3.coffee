@@ -75,8 +75,30 @@ wrapper =
       Key: @prefix + '/' + path
     @S3.getPublicUrl 'getObject', obj
 
-  list: (expr,cursor,count,next) ->
-    
-    next [], null
+  withPrefix: (prefix,cursor,count,next) ->
+
+    prefix = prefix + '/' if ! /\/$/.test prefix
+
+    query =
+      Bucket: @bucket
+      Prefix: @prefix + '/' + prefix
+      MaxKeys: count
+
+    if cursor
+      query.Marker = cursor
+
+    @S3.listObjects query, (err,data) ->
+
+      return next err, null, null if err
+      
+      keys = (item.Key for item in data.Contents)
+      keys.sort()
+      keys.shift() if keys.length > 0 && keys[0] == cursor
+
+      cursor = null
+      if data.IsTruncated && keys.length > 0 
+        cursor = keys.pop()
+
+      next null, keys, cursor
           
 module.exports = wrapper

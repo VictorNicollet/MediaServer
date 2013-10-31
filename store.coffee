@@ -199,12 +199,16 @@ class Store
     processBatch = (start) =>
       @_db.withPrefix prefix, start, count, (err,list,end) ->
         return finish err if err
-        return finish null if list.length == 0
         doEach = (i) ->
-          return processBatch end if i == list.length 
-          each list[i], (keepGoing) ->
-            return finish null if !keepGoing
-            doEach(i+1)
+          if i == list.length
+            if end == null
+              finish null
+            else  
+              processBatch end
+          else 
+            each list[i], (keepGoing) ->
+              return finish null if !keepGoing
+              doEach(i+1)
             
     processBatch null
     
