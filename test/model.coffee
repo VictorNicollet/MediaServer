@@ -52,14 +52,13 @@ exports["test model#define: 3"] = (beforeExit, assert) ->
   store = new Store(new Mock)
   store.put "id:a", content('{"a":"b"}'), ->
     update = (m,next) ->
-      assert.isNull err
       assert.eql    m.proof, "a"
       assert.ok     !m.readonly
       assert.eql    m.json, { a: "b" }
       assert.eql    m.store, store
       m.json.a = "c"
       next null, m 
-    model.exports.update store, "a", ->
+    model.exports.update store, "a", update, ->
       store.get "id:a", (err,data) ->
         assert.eql '{"a":"b"}', data
 

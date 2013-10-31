@@ -29,9 +29,6 @@ module.exports.define = (theModule,theClass,getUrl) ->
 
   onUpdate = []
 
-  started  = 0
-  finished = 0
-
   doOnUpdate = (store, obj, finished) ->
     doLoop = (i) ->
       if i < onUpdate.length 
@@ -75,14 +72,16 @@ module.exports.define = (theModule,theClass,getUrl) ->
         if obj != null && (!('hasChanged' of obj) || obj.hasChanged())
           json = obj.serialize()
           theChangedObject = obj
-        
+          
         next null, json 
 
     realNext = (err) ->
-      next err, null if err
+      next err, null if err      
+      if theChangedObject != null
+        setImmediate ->
+          doOnUpdate store, theChangedObject, ->
       next null, theObject
-      doOnUpdate store, theChangedObject if theChangedObject != null
-  
+      
     store.updateJSON url, realUpdate, realNext
 
   # Loads the specified instances, calls the "touch" function, then calls
