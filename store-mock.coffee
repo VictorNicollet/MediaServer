@@ -8,34 +8,48 @@ current = 1
 class StoreMock
 
   constructor: ->
-    @buckets = {}
-    @bucket = "test"
-    @prefix = "" + current++
+    @_keys = {}
+    @_id   = "" + current++
 
-  getBucket: (bucket) ->
-    @buckets[bucket] || (@buckets[bucket] = {})
+  uid: (path) ->
+    "mockdb://#{@_id}/#{path}"
 
-  # Replacement for S3.putObject
-
-  putObject: (obj,next) ->
-    @getBucket(obj.Bucket)[obj.Key] = obj.Body
+  put: (path,obj,next) ->
+    @_keys[path] = obj.Body
     next null
 
-  # Replacement for S3.getObject
+  get: (path,next) ->
+    if path of @_keys
+      return next null, @_keys[path] 
+    next null, null
 
-  getObject: (obj,next) ->
-    bucket = @getBucket obj.Bucket
-    if obj.Key of bucket
-      return next null, { Body: bucket[obj.Key] }
-    next "NoSuchKey", null
+  getSignedUrl: (path) ->
+    'https://test/' + path
 
-  # Replacement for S3.getSignedUrl
+  glob: (expression,start,count,next) ->
 
-  getSignedUrl: (obj) ->
-    'https://' + obj.Bucket + '.s3.amazonaws.com/' + obj.Key
+    clean = (seg) -> seg.replace(/[\[\].*+?{}()|^\\$]/g,"\\$1")
 
+    regexp = (clean seg for seg in expression.split '*').join('[^/]*') 
+    regexp = new RegExp("^" + regexp + "$")
+
+    matching = (key for key of @_keys when regexp.test key)
+    
+    start = start || 0
+
+    if start > matching.length
+      result = []
+    else if start + count > matching.length 
+      result = matching[start..]
+    else
+      result = matching[start..start+count-1]
+
+    start = if start + count > matching.length then null else start + count
+
+    next(null, result, start)
+    
   toString: ->
-    "Mock DB #{@prefix}"
+    "Mock DB #{@_id}"
 
 # Export the class as a whole
   

@@ -17,9 +17,65 @@ else
 bucket = 'docs.nicollet.net'
 
 S3 = new AWS.S3()
-S3.prefix = prefix
-S3.bucket = bucket
-S3.toString = ->
+
+# Generic error message sent back to the user when something goes
+# wrong with Amazon S3
+
+S3ERR = "Error connecting to Amazon S3"
+
+# The wrapper implements the database interface expected by `Store`
+# using the Amazon S3 client API. 
+
+wrapper =
+  S3: S3
+  prefix: prefix
+  bucket: bucket
+  toString: ->
    "S3 #{bucket}/#{prefix}"
 
-module.exports = S3
+  uid: (path) ->
+    "S3://#{bucket}/#{prefix}/#{path}"
+
+  get: (path,next) ->
+    obj =
+      Bucket: @bucket
+      Key: @prefix + '/' + path
+    retry (n) =>
+      @S3.getObject obj, (err,data) ->
+        if err != null
+          if /^NoSuchKey/.test err
+            next null, null
+          else if n > 0
+            retry(n-1)
+          else
+            next S3ERR, null
+        else
+          next null, data.Body
+    retry 5
+
+  set: (path,theObj,next) ->
+    obj = {}
+    obj[k] = v for k, v of theObj
+    obj.Bucket = @bucket
+    obj.Key = @prefix + '/' + path
+    retry (n) =>
+      @S3.putObject obj, (err) ->
+        if err != null
+          if n > 0
+            retry(n-1)
+          else
+            next S3ERR
+        else
+          next null
+    retry 5
+
+  getPublicUrl: (path) ->
+    obj =
+      Bucket: @bucket
+      Key: @prefix + '/' + path
+    @S3.getPublicUrl 'getObject', obj
+
+  glob: (expr,cursor,count,next) ->
+    next [], null
+          
+module.exports = wrapper

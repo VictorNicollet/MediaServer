@@ -16,59 +16,37 @@ withLock = do ->
   (params, next, action) ->
     mutex.run keyOfParams(params), next, action
 
-# Reformats a complex Amazon S3 message into a more human-friendly
-# one. If `null` is passed, returns `null`.
-
-error = (err) ->
-  if err == null then null else "Error connecting to Amazon S3"
-
-# Despite being high-availability, sometimes S3 times out on some
-# requests. Usually, it is enough to try the same request again.
-# `retry(action,retries)(args,next)` will call `action(args,next)`
-# until it succeeds or `retries` times, whichever comes first.
-#
-# For the purposes of this function, failure is defined as calling
-# `next` with a non-null error parameter.
-
-retry = (action,retries=3) ->
-  (args, next) ->
-    recurse = (retries) ->
-      action args, (err,data) ->
-        if err != null && retries > 0
-          recurse(retries-1)
-        else
-          next err, data
-    recurse retries
-
 # A store is a wrapper against a naive storage database.
+#
+# A storage database MUST implement the following methods:
+#
+#  - `uid(path)` returns an unique identifier for the object
+#    at the specified path. Must be unique across all database
+#    models, though only within a process.
+# 
+#  - `put(path,obj,next)`: puts the object `obj` at
+#    `path`, calls `next(err)` afterwards. `obj` should contain
+#    field `body`, and may contain fields `contentType` and
+#    `contentDisposition`.
+#
+#  - `get(path,next)`: grabs the data stored at `path`,
+#    calls `next(err,data)`. If no data is stored there, calls
+#    `next(null,null)` (it does not count as an error).  
+#
+#  - `getSignedUrl(path)`: returns a public access URL for
+#    `path`.
+#
+#  - `glob(expr,cursor,count,next)`: enumerates up to `count`
+#    paths that satisfy glob expression `expr`, starting at
+#    `start`. Calls `next(err,list,newCursor)`. Cursor is an
+#    arbitrary type, the only requirement is that `null` is
+#    a valid cursor representing the first element
 
 class Store
-
-  # Build a basic `{Bucket,Key}` object from a path. An optional
-  # second parameter takes an object to be extended instead of
-  # creating a new one.
-
-  _makeParams: (path,extend=null) ->
-    extend = {} if extend == null
-    extend.Bucket = @_db.bucket
-    extend.Key = @_db.prefix + '/' + path
-    extend
 
   # Use a database driver internally
    
   constructor: (@_db) ->
-
-  # Retry putting an object until it succeeds
-   
-  _putObjectRetry: (obj,next) ->
-    r = retry (obj,next) => @_db.putObject obj, next
-    r obj, next
-
-  # Retry getting an object until it succeeds
-          
-  _getObjectRetry: (obj,next) ->
-    r = retry (obj,next) => @_db.getObject obj, next
-    r obj, next
     
   # Locks and stores an object on a database.
   #
@@ -82,16 +60,14 @@ class Store
   # update function realizes there is no need to perform the update.
 
   put: (path,getContent,next) ->
-    params = @_makeParams path
-    withLock params, next, (next) =>
+    withLock @_db.uid(path), next, (next) =>
       getContent (err,content) =>       
         return next err,  null if err
         return next null, null if content == null
-        params.Body = content
-        console.log "S3.putObject #{params.Key}"
-        @_putObjectRetry params, (err,data) ->  
-          console.log "S3.putObject #{params.Key}: #{err}" if err
-          next error(err), null
+        console.log "db.put #{path}"
+        @_db.put path, { Body: content }, (err,data) ->  
+          console.log "db.put #{path}: #{err}" if err
+          next err, null
 
   # Grabs an object from a database without a lock.
   #
@@ -99,13 +75,10 @@ class Store
   # returns a buffer with the object contents.
  
   get: (path,next) ->
-    params = @_makeParams path
-    console.log "S3.getObject #{params.Key}"
-    @_getObjectRetry params, (err,data) =>
-      err = null if /^NoSuchKey/.test err
-      console.log "S3.getObject #{params.Key}: #{err}" if err
-      data = if data == null then null else data.Body
-      next error(err), data
+    console.log "db.get #{path}"
+    @_db.get path, (err,data) =>
+      console.log "db.get #{path}: #{err}" if err
+      next err, data
 
   # Grabs an object from a database without a lock, parses it as JSON.
   #
@@ -141,6 +114,44 @@ class Store
         f data, next
     @put path, getContent, next
 
+  # Upload a file to a database, using its MD5 as its name.
+  # 
+  # The path of the generated file is `$prefix/$md5`
+  # This operation is idempotent, so no locking is performed.
+  #
+  # The file argument is expected to contain the following fields:
+  #  - `file.path`: a local path where the file is stored.
+  #  - `file.content`: the file contents, as a string or buffer
+  #  - `file.type`: the MIME-type of the file
+  #  - `file.name`: the user-provided name of the file
+  #
+  # Exactly one of `file.path` and `file.content` must be provided.
+  # 
+  # Returns the MD5.
+
+  uploadFile: (prefix,file,next) ->
+    withFile = (err,content) => 
+      return next("When opening file: #{err}", null) if err
+      md5 = do -> 
+        hash = crypto.createHash 'md5'
+        hash.update content
+        hash.digest 'hex'
+      path = prefix + "/" + md5
+      obj = 
+        Body: content
+        ContentType: file.type
+      if file.name
+        obj.ContentDisposition = "attachment; filename=#{file.name}"
+      console.log "db.put #{path}"
+      @_db.put path, obj, (err,data) ->
+        console.log "db.put #{path}: #{err}" if err
+        next err, md5
+
+    if 'content' of file
+      withFile null, file.content
+    else
+      fs.readFile file.path, withFile
+
   # Locks and updates a JSON value on a database.
   #
   # Acts as `update`, but the data is parsed as JSON before being
@@ -166,50 +177,37 @@ class Store
         if json == null
           next "Error parsing JSON", null
         f json, next2
-     @update path, f2, next  
-
-  # Upload a file to a database, using its MD5 as its name.
-  # 
-  # The path of the generated file is `$prefix/$md5`
-  # This operation is idempotent, so no locking is performed.
-  #
-  # The file argument is expected to contain the following fields:
-  #  - `file.path`: a local path where the file is stored.
-  #  - `file.content`: the file contents, as a string or buffer
-  #  - `file.type`: the MIME-type of the file
-  #  - `file.name`: the user-provided name of the file
-  #
-  # Exactly one of `file.path` and `file.content` must be provided.
-  # 
-  # Returns the MD5.
-
-  uploadFile: (prefix,file,next) ->
-    withFile = (err,content) => 
-      return next("When opening file: #{err}", null) if err
-      md5 = do -> 
-        hash = crypto.createHash 'md5'
-        hash.update content
-        hash.digest 'hex'
-      params = @_makeParams [prefix,md5].join('/'),  
-        Body: content
-        ContentType: file.type
-      if file.name
-        params.ContentDisposition = "attachment; filename=#{file.name}"
-      console.log "S3.putObject #{params.Key}"
-      @_putObjectRetry params, (err,data) ->
-        console.log "S3.putObject #{params.Key}: #{err}" if err
-        next error(err), md5
-
-    if 'content' of file
-      withFile null, file.content
-    else
-      fs.readFile file.path, withFile
-                     
+    @update path, f2, next
+                         
   # Get a visitable URL, that lasts an entire day.
  
   getUrl: (path) ->
-    @_db.getSignedUrl 'getObject', makeParams path
+    @_db.getSignedUrl path
+    
+  # Iterate through a list of all keys that match a certain
+  # glob expression.
+  #
+  # `each(path,next)` is called for each path, and should call
+  # `next(bool)` when it has finished processing the path. The
+  # boolean should be false to stop processing, true to continue.
 
+  glob: (expression,each,finish = null) ->
+
+    finish = finish || -> 
+    count = 20
+    
+    processBatch = (start) =>
+      @_db.glob expression, start, count, (err,list,end) ->
+        return finish err if err
+        return finish null if list.length == 0
+        doEach = (i) ->
+          return processBatch end if i == list.length 
+          each list[i], (keepGoing) ->
+            return finish null if !keepGoing
+            doEach(i+1)
+            
+    processBatch null
+    
   toString: ->
     "Store @ " + @_db.toString()
 

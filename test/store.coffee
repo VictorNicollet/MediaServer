@@ -40,4 +40,19 @@ exports["test store#getObject on two put keys"] = (beforeExit, assert) ->
       store.get "bar", (err,data) ->
         assert.eql "BAR", data
 
-        
+# Reading through objects with glob
+
+exports["test store#glob"] = (beforeExit, assert) ->
+  store = new Store(new Mock)
+  store.put "foo/1", content("FOO"), (err) ->
+    store.put "bar/1", content("BAR"), (err) ->
+      store.put "baz/quux/1", content("BAZQUUX"), (err) ->
+        store.put "bar/1/2", content("BAR2"), (err) ->
+          found = []
+          each = (path) -> found.push path
+          store.glob "*/1", each, ->
+            expect = ["foo/1","bar/1"]
+            expect.sort()
+            found.sort()            
+            assert.eql expect, found
+                  

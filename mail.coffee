@@ -17,7 +17,14 @@ defaultConfig =
 # remote host.
  
 grabMail = (config, next) ->
-  
+
+  toBeRetrieved = []
+  retrieveNext = ->
+    if toBeRetrieved.length == 0
+      client.quit() 
+    else
+      client.retr toBeRetrieved.shift()
+      
   client = new POP3Client config.port, config.host,
     tlserrs: false,
     enabletls: false,
@@ -27,29 +34,26 @@ grabMail = (config, next) ->
     client.login config.user, config.pass
     
   client.on 'login', (status,raw) ->
-    do client.list if status
-
-  toBeRetrieved = []
-  retrieveNext = ->
-    if toBeRetrieved.length == 0
-      client.quit() 
-    else
-      client.retr toBeRetrieved.shift()
+    return do next if !status
+    do client.list
     
-  client.on 'list', (status, count, nbr, messages) -> 
+  client.on 'list', (status, count, nbr, messages) ->
+    return do next if !status
     for msg, i in messages when msg
       toBeRetrieved.push i
       break if toBeRetrieved.length > config.batch
     do retrieveNext  
 
   client.on 'retr', (status, nbr, data) ->
+    return do next if !status
     MailRaw.save store, data, (err) ->
       if err
         do retrieveNext
       else
     client.dele nbr
 
-  client.on 'dele', () ->
+  client.on 'dele', (status) ->
+    return do next if !status
     do retrieveNext
 
   client.on 'quit', () ->
@@ -58,7 +62,8 @@ grabMail = (config, next) ->
 poll = ->  
   grabMail defaultConfig, ->
     console.log "POP3 polling done !"
-
+    setTimeout poll, 60000
+  
 module.exports.install = (app,next) ->
+  setImmediate poll
   do next
-  setTimeout poll, 1000
