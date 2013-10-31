@@ -113,7 +113,7 @@ class Index
 
       # Sort the keys remaining keys, then insert them in one pass.
 
-      keys = (key in sortkeys when !(key in foundkeys))
+      keys = (key for key in sortkeys when !(key in foundkeys))
 
       if keys.length > 0
 
@@ -130,7 +130,7 @@ class Index
 
       next null, if changed then json else null
 
-    store.updateJSON @pIndex + set, update, next      
+    store.updateJSON @_pIndex + set, update, next      
 
   # Removes an identifier from an index file. 
 
@@ -186,7 +186,7 @@ class Index
          
       return next null, json
 
-    store.updateJSON @pIndex + set, update, next      
+    store.updateJSON @_pIndex + set, update, next      
         
   # Marks an identifier as removed from several index files in the set file
   # for that identifier. This should be done after the removal.
@@ -260,11 +260,11 @@ class Index
     limit  = 10
     offset = 0
 
-    run = (next) ->
+    run = (next) =>
 
-      store.getJSON @pIndex + set, (err,data) ->
+      store.getJSON @_pIndex + set, (err,data) ->
         return next err if err
-        return next null, { list: [], count: 0 } if data == null || data.keys.length == 0
+        return next null, [], 0 if data == null || data.keys.length == 0
 
         k = data.keys
 
@@ -315,7 +315,7 @@ class Index
         while i < e && out.length < limit
           out.push [k[i][0], data.ids[k[i][1]], data.data[k[i][1]]]
 
-        next null, { list: out, count: e - s }
+        next null, out, e - s
       
     query =
       before: (b) ->
