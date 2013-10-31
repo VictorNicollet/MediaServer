@@ -75,7 +75,8 @@ wrapper =
       Key: @prefix + '/' + path
     @S3.getPublicUrl 'getObject', obj
 
-  glob: (expr,cursor,count,next) ->
+  list: (expr,cursor,count,next) ->
+    
     next [], null
           
 module.exports = wrapper

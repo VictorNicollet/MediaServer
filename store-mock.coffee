@@ -26,12 +26,11 @@ class StoreMock
   getSignedUrl: (path) ->
     'https://test/' + path
 
-  glob: (expression,start,count,next) ->
+  withPrefix: (prefix,start,count,next) ->
 
-    clean = (seg) -> seg.replace(/[\[\].*+?{}()|^\\$]/g,"\\$1")
-
-    regexp = (clean seg for seg in expression.split '*').join('[^/]*') 
-    regexp = new RegExp("^" + regexp + "$")
+    prefix = prefix + '/' if ! /\/$/.test prefix
+    clean  = prefix.replace(/[\[\].*+?{}()|^\\$]/g,"\\$1")
+    regexp = new RegExp("^"+clean)
 
     matching = (key for key of @_keys when regexp.test key)
     

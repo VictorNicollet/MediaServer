@@ -4,6 +4,10 @@ MailParser = require('mailparser').MailParser
 Proof = require '../proof'
 Model = require '../model'
 
+Prefix =
+  raw: "mail/raw"
+  parts: (id) -> "mail/parts/#{id}"
+
 # A part of a raw e-mail. Generated internally.
  
 class Part
@@ -22,7 +26,7 @@ class Part
     # If the contents of the part are provided, save them.
     @_cache = part.content || null
     
-    @_path = "mail/raw/#{mailId}/#{part.md5}"
+    @_path = "#{Prefix.parts mailId}/#{part.md5}"
 
    # Asynchronously load the part data.
    getData: (next) ->
@@ -83,7 +87,7 @@ class MailRaw
 # ------------------
 # Install the module      
 
-Model.define module, MailRaw, (id) -> "mail/raw/#{id}.json"
+Model.define module, MailRaw, (id) -> "#{Prefix.raw}/#{id}.json"
 
 # Don't allow updates...
 delete exports.update
@@ -100,8 +104,8 @@ exports.save = (store,raw,next) ->
     hash.update raw
     hash.digest 'hex'
 
-  prefix = "mail/raw/#{id}"
-  path = prefix + ".json"
+  prefix = Prefix.parts id
+  path = "#{Prefix.raw}/#{id}.json"
 
   # Saving a part is a typical downloadable file upload.
   # Here, `part` contains the following:

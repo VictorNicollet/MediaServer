@@ -44,14 +44,14 @@ exports["test store#getObject on two put keys"] = (beforeExit, assert) ->
 
 exports["test store#glob"] = (beforeExit, assert) ->
   store = new Store(new Mock)
-  store.put "foo/1", content("FOO"), (err) ->
-    store.put "bar/1", content("BAR"), (err) ->
-      store.put "baz/quux/1", content("BAZQUUX"), (err) ->
-        store.put "bar/1/2", content("BAR2"), (err) ->
+  store.put "foo/1", content("FOO1"), (err) ->
+    store.put "bar/1", content("BAR1"), (err) ->
+      store.put "barquux", content("BARQUUX"), (err) ->
+        store.put "bar/2", content("BAR2"), (err) ->
           found = []
           each = (path) -> found.push path
-          store.glob "*/1", each, ->
-            expect = ["foo/1","bar/1"]
+          store.withPrefix "bar", each, ->
+            expect = ["bar/1","bar/2"]
             expect.sort()
             found.sort()            
             assert.eql expect, found

@@ -191,13 +191,13 @@ class Store
   # `next(bool)` when it has finished processing the path. The
   # boolean should be false to stop processing, true to continue.
 
-  glob: (expression,each,finish = null) ->
+  withPrefix: (prefix,each,finish = null) ->
 
     finish = finish || -> 
     count = 20
     
     processBatch = (start) =>
-      @_db.glob expression, start, count, (err,list,end) ->
+      @_db.withPrefix prefix, start, count, (err,list,end) ->
         return finish err if err
         return finish null if list.length == 0
         doEach = (i) ->
