@@ -133,7 +133,7 @@ exports.save = (store,raw,next) ->
       # This will cause every module that's listening to new mail
       # coming in to actually process the e-mail.
 
-      setImmediate -> module.exports.touch store, [id]
+      setImmediate -> module.exports.touch store, [{id:id}]
 
       next null, id
 
