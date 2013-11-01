@@ -1,6 +1,7 @@
 require 'coffee-script'
 crypto = require 'crypto'
 MutexHash = require './mutex-hash'
+Cache = require './store-cache'
 
 # It is forbidden to run simultaneous updates on the same document
 # (since this would lead to one update being ignored by the other)
@@ -15,6 +16,10 @@ withLock = do ->
   keyOfParams = (params) -> params.Bucket + '/' + params.Key
   (params, next, action) ->
     mutex.run keyOfParams(params), next, action
+
+# Use a common cache for all stores. Store up to 50 MB
+
+cache = new Cache(50 * 1024 * 1024)
 
 # A store is a wrapper against a naive storage database.
 #
@@ -60,13 +65,15 @@ class Store
   # update function realizes there is no need to perform the update.
 
   put: (path,getContent,next) ->
-    withLock @_db.uid(path), next, (next) =>
+    uid = @_db.uid path
+    withLock uid, next, (next) =>
       getContent (err,content) =>       
         return next err,  null if err
         return next null, null if content == null
         console.log "db.put #{path}"
         @_db.put path, { Body: content }, (err,data) ->  
           console.log "db.put #{path}: #{err}" if err
+          cache.set uid, content
           next err, null
 
   # Grabs an object from a database without a lock.
@@ -75,10 +82,17 @@ class Store
   # returns a buffer with the object contents.
  
   get: (path,next) ->
-    console.log "db.get #{path}"
-    @_db.get path, (err,data) =>
-      console.log "db.get #{path}: #{err}" if err
-      next err, data
+    uid = @_db.uid path
+    cached = cache.get uid
+    if cached != null
+      console.log "db.get #{path} [CACHED]"
+      next null, cached
+    else
+      console.log "db.get #{path}"
+      @_db.get path, (err,data) =>
+        console.log "db.get #{path}: #{err}" if err
+        cache.set uid, data if !err
+        next err, data
 
   # Grabs an object from a database without a lock, parses it as JSON.
   #
@@ -143,7 +157,8 @@ class Store
       if file.name
         obj.ContentDisposition = "attachment; filename=#{file.name}"
       console.log "db.put #{path}"
-      @_db.put path, obj, (err,data) ->
+      @_db.put path, obj, (err,data) =>
+        cache.unset @_db.uid path
         console.log "db.put #{path}: #{err}" if err
         next err, md5
 
