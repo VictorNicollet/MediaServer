@@ -1,4 +1,5 @@
 require 'coffee-script'
+Thread = require './thread-limiter'
 
 # Sets up a model's "get" and "update" functions.
 #
@@ -30,13 +31,8 @@ module.exports.define = (theModule,theClass,getUrl) ->
   onUpdate = []
 
   doOnUpdate = (store, obj, finished) ->
-    doLoop = (i) ->
-      if i < onUpdate.length 
-        onUpdate[i] store, obj, ->
-          doLoop(i+1)
-      else
-        do finished
-    doLoop 0
+    thread = (f) -> (next) -> f store, obj, next
+    Thread.start (thread f for f in onUpdate), finished
                   
   theModule.exports.runOnUpdate = (f) ->
     onUpdate.push f
@@ -77,9 +73,8 @@ module.exports.define = (theModule,theClass,getUrl) ->
 
     realNext = (err) ->
       next err, null if err      
-      if theChangedObject != null
-        setImmediate ->
-          doOnUpdate store, theChangedObject, ->
+      if theChangedObject != null       
+        doOnUpdate store, theChangedObject, ->
       next null, theObject
       
     store.updateJSON url, realUpdate, realNext

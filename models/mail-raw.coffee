@@ -3,6 +3,7 @@ crypto = require 'crypto'
 MailParser = require('mailparser').MailParser
 Proof = require '../proof'
 Model = require '../model'
+Thread = require '../thread-limiter'
 
 Prefix =
   raw: "mail/raw"
@@ -182,10 +183,11 @@ exports.save = (store,raw,next) ->
 # Touch all the raw e-mail in a store
 
 module.exports.touchAll = (store,next) ->
+  batch = Thread.batch()
   touch = (id,next) ->
     id = id.substring 0, id.length - ".json".length
-    module.exports.touch store, [{id:id}], ->
-      next true
+    batch.start (next) -> module.exports.touch store, [{id:id}], next
+    next true
   store.withPrefix Prefix.raw, touch, next
 
 

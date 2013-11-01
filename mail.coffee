@@ -3,6 +3,7 @@ POP3Client = require 'poplib'
 MailRaw = require './models/mail-raw'
 Mail = require './models/mail'
 MailBox = require './models/mail-box'
+Thread = require './thread-limiter'
 
 Store = require './store'
 store = new Store require './s3'
@@ -61,13 +62,15 @@ grabMail = (config, next) ->
   client.on 'quit', () ->
     do next 
         
-poll = ->  
-  grabMail defaultConfig, ->
+poll = () ->
+  Thread.start ((next) -> grabMail defaultConfig, next), ->
     console.log "POP3 polling done !"
     setTimeout poll, 60000
   
 module.exports.install = (app,next) ->
-  setImmediate poll
-  setImmediate -> MailRaw.touchAll store
-  setImmediate -> Mail.touchAll store
+  Thread.start [
+    (next) -> MailRaw.touchAll store, next
+    (next) -> Mail.touchAll store, next
+  ]
+  do poll
   do next

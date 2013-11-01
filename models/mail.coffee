@@ -2,6 +2,7 @@ require 'coffee-script'
 Model = require '../model'
 Proof = require '../proof'
 MailRaw = require './mail-raw'
+Thread = require '../thread-limiter'
 
 Prefix =
   meta: "mail/meta"
@@ -180,9 +181,10 @@ MailRaw.runOnUpdate (store,raw,next) ->
 # Touch all the e-mail info in a store
 
 module.exports.touchAll = (store,next) ->
+  batch = Thread.batch()
   touch = (id,next) ->
     id = id.substring 0, id.length - ".json".length
-    module.exports.touch store, [{id:id}], ->
-      next true
+    batch.start (next) -> module.exports.touch store, [{id:id}], next
+    next true
   store.withPrefix Prefix.meta, touch, next
 
