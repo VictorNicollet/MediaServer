@@ -138,7 +138,7 @@ MailRaw.runOnUpdate (store,raw,next) ->
 
     date = do ->
       input = raw.header "date"
-      re = /^[^,]+, (\d+) ([^ ]+) (\d+) (\d+):(\d+):(\d+) ([+-])(\d\d)(\d\d)/
+      re = /(\d+) ([A-Z][a-z][a-z]) (\d+) (\d+):(\d+):(\d+) ([+-])(\d\d)(\d\d)/
       matches = re.exec input
       try 
         day = parseInt matches[1], 10

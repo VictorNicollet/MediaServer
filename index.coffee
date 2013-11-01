@@ -110,14 +110,14 @@ class Index
         bits = []
         for key, i in json.keys
           continue if key[1] != posOfId
-          if key[0] in sortkeys
+          if sortkeys.indexOf key[0] != -1
             foundkeys.push key[0]
             continue
           bits.push json.keys.slice l, i if l != i      
           l = i + 1
             
         if l != 0
-          json.keys = [].merge.call([],bits)
+          json.keys = [].merge.call [], bits
           changed = true
 
       # Sort the keys remaining keys, then insert them in one pass.
