@@ -49,7 +49,13 @@ class Index
         if !(set in sets)
           sets.push set
           toRemove.push set
-      next null, { sets: sets }
+
+      # If the set file did not change, do not bother writing it
+      # back to storage
+      if sets.length == json.sets.length
+        next null, null
+      else          
+        next null, { sets: sets }
       
     store.updateJSON @_pSets + id, update, (err) ->
       return next err, null if err
