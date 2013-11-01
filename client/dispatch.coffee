@@ -14,7 +14,7 @@ do ->
     routes.push (p) ->
       if t = re.test p 
         $c.html('').trigger 'route'
-        f p.match(re)[1..], (h) -> $c.html h         
+        f new R($c), p.match(re)[1..]
       t
       
   String::route = (f) ->
@@ -24,7 +24,7 @@ do ->
   # the current URL
 
   route = (p) ->
-    p = p || doc.location.pathname
+    p = if typeof p == 'string' then p else doc.location.pathname
     routes.seek (r) -> r p 
         
   # Go to the specified path. Sets the browser's URL to that value,

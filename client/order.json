@@ -1,4 +1,6 @@
 [ 
   "util.coffee", 
-  "dispatch.coffee" 
+  "renderer.coffee",
+  "dispatch.coffee",
+  "albums.coffee"
 ]
