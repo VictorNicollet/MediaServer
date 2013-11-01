@@ -176,7 +176,7 @@ MailRaw.runOnUpdate (store,raw,next) ->
 
     next null, mail
 
-  module.exports.update store, raw.id(), update, next
+  module.exports.update store, {id: raw.id()}, update, next
      
 # Touch all the e-mail info in a store
 
