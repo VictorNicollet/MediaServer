@@ -33,6 +33,7 @@ class Mail
       @_parts   = json.parts
       @_date    = json.date
       @_box     = json.box
+      @_status  = json.status
     else
       @_box     = 0
       
@@ -91,6 +92,12 @@ class Mail
 
   date: getOrSet '_date'
 
+  # Status can be one of: 
+  #  - NEW: has just arrived, has not been processed by the user yet
+  #  - LATER: has been marked as "process later" by the user
+  
+  status: getOrSet '_status'
+
   # What box is this e-mail stored in ?
 
   box: -> @_box
@@ -114,6 +121,7 @@ class Mail
       parts: @_parts || 0
       date: @_date 
       box: @_box
+      status: @_status || 'NEW'
     json 
     
 # ------------------
@@ -131,6 +139,7 @@ MailRaw.runOnUpdate (store,raw,next) ->
       .from(if raw.from.length > 0 then raw.from[0].address else null)
       .toCount(raw.to.length)
       .parts(raw.parts.length)
+      .status('NEW')
 
     if raw.text
       text = raw.text.trim().replace(/\s+/g,' ')

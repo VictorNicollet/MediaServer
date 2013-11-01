@@ -117,12 +117,12 @@ class Index
           l = i + 1
             
         if l != 0
-          json.keys = [].merge.call [], bits
+          json.keys = [].concat.call [], bits
           changed = true
 
       # Sort the keys remaining keys, then insert them in one pass.
 
-      keys = (key for key in sortkeys when !(key in foundkeys))
+      keys = (key for key in sortkeys when foundkeys.indexOf key == -1)
 
       if keys.length > 0
 
@@ -171,14 +171,11 @@ class Index
         bits = []
         for key, i in json.keys
           continue if key[1] != posOfId
-          if key[0] in sortkeys
-            foundkeys.push key[0]
-            continue
           bits.push json.keys.slice l, i if l != i      
           l = i + 1
             
         if l != 0
-          json.keys = [].merge.call [], bits             
+          json.keys = [].concat.call [], bits             
 
       # Special case for where this is the identifier at the highest
       # position in the index.
@@ -210,7 +207,7 @@ class Index
 
     update = (json,next) ->
       return next null, null if !json 
-      sets = (set for set in json.sets when !(set in rmsets))
+      sets = (set for set in json.sets when rmsets.indexOf set == -1)
       next null, (if sets.length == json.sets.length then null else { sets: sets })
       
     store.updateJSON @_pSets + id, update, next

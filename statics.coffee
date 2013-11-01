@@ -51,10 +51,9 @@ module.exports.install = (app, next) ->
         serve app, "/app.js", appJs, "application/javascript"
         do next
 
-      fs.readdir coffeeSource, (err,files) ->
-        files = (file for file in files when /.coffee$/.test file)
-        seq.iter read, files, ->
-          do compile
+      files = require "./client/order.json"
+      seq.iter read, files, ->
+        do compile
 
     # Index HTML is compiled as-is
     (next) -> 
