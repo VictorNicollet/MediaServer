@@ -85,7 +85,7 @@ wrapper =
       MaxKeys: count
 
     if cursor
-      query.Marker = @prefix + '/' + prefix + '/' + cursor
+      query.Marker = @prefix + '/' + prefix + cursor
 
     @S3.listObjects query, (err,data) =>
 
@@ -94,7 +94,7 @@ wrapper =
       keys = (item.Key.substring query.Prefix.length for item in data.Contents)
       keys.sort()
       keys.shift() if keys.length > 0 && keys[0] == cursor
-
+      
       cursor = null
       if data.IsTruncated && keys.length > 0 
         cursor = keys.pop()
