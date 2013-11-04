@@ -19,9 +19,9 @@ do ->
     # main container of the page. If any tags are left
     # unclosed, closes them.
   
-    show: ->
+    show: () ->
       [].push.call @h, @e
-      @$.html @h.join ''
+      $(@h.join '').prependTo @$
       @c[k] new R $ k for k of @c
              
     # Renders HTML-escaped text.

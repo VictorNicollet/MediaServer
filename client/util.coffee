@@ -9,6 +9,13 @@ Array::seek = (f) ->
     if f x
       return 
 
+# The container will be loaded later, but other pieces of the
+# system may need to set up event listeners before that happens,
+# so provide a way to do that.
+
+@$c =
+  on: (e,f) -> $ -> $c.on(e,f)
+
 $ =>
 
   # Shorthand reference to the container

@@ -23,7 +23,7 @@ do ->
   # Dispatches to the specified path or, if no path is specified,
   # the current URL
 
-  route = (p) ->
+  @route = (p) ->
     p = if typeof p == 'string' then p else doc.location.pathname
     routes.seek (r) -> r p 
         
@@ -46,3 +46,5 @@ do ->
       false
 
   $ route
+
+  

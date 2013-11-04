@@ -2,5 +2,7 @@
   "util.coffee", 
   "renderer.coffee",
   "dispatch.coffee",
+  "model.coffee",
+  "persona.coffee",
   "albums.coffee"
 ]

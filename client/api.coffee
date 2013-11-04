@@ -1,4 +1,4 @@
-# API connectors: anything API-related goes through here
+# Api connectors: anything API-related goes through here
 
 @API =
 

@@ -1,43 +1,63 @@
-# Persona interaction
+# Using persona to log in.
 
-@Persona =
+$ =>
 
-  showLoginScreen: ->
-
-    $('#container').html ''
-
-    $well = $ "<div class='alert alert-info login'><strong>You are not logged in.</strong></div>"
-    $well.appendTo('#container')
-        
-    $b = $ '<a class="persona-button" href="javascript:void(0)"><span>Login</span></a>'
-    $b.appendTo $well
-    $b.click ->
-      do navigator.id.request
+  # Return the e-mail of the currently logged in user (if any)
+  # or `null`. This reads the 'S' cookie, which may in fact be an
+  # invalid assertion. If that happens, a 'loginRequired' response
+  # will be received on the first request to the server, which will
+  # trigger persona login again.
   
-$ ->
-  
-  $in = $ '#login'
-  $in.click ->
-    do navigator.id.request
+  email = ->
+    try 
+      re      = /(?:(?:^|.*;\s*)S\s*\=\s*([^;]*).*$)|^.*$/ 
+      cookie  = document.cookie.replace re, "$1"
+      sess    = $.parseJSON unescape cookie
+      sess.email || null
+    catch err
+      null
 
-  $out = $ '#logout'
-  $out.click ->
-    do navigator.id.logout
+  # Shortcut for 'navigator.id'
+   
+  id = navigator.id
 
-  Persona.paint = -> 
-    u = API.getUserEmail()
-    $in.toggle(u == null)
-    $out.toggle(u != null)
+  # The login and logout buttons. Both should be hidden initially, and
+  # will be displayed by `persona()`
+   
+  $i = $('#login').click -> id.request()
+  $o = $('#logout').click -> id.logout()
+
+  # Update the graphical aspects of persona integration: login/logout
+  # buttons and (if not logged in) a login message.
+
+  @persona = ->
+
+    u = email()
+    $o.toggle !u
+    $i.toggle !!u
+
     $('#username').text(u || '')
-    do Persona.showLoginScreen if u == null
 
-  navigator.id.watch
-    loggedInUser: API.getUserEmail()
+    if !u
+      $c.html ''
+      new R($c)
+        .open('div',{class:'alert alert-info login'})
+        .open('strong').esc("You are not logged in.").close()
+        .open('a',{class:'persona-button',href:'javascript:void(0)'},
+          (r) -> r.$.click -> id.request())
+        .open('span').esc('Login')
+        .show()
+
+  # Run persona. 
+        
+  id.watch
+    loggedInuser: email()
     onlogin: (a) ->
-      API.session.start a, () ->
-        do Persona.paint
-        do Route.dispatch
-    onlogout: () ->
-      API.session.close Persona.paint
-    onready: Persona.paint
-  
+      post 'login', {'assertion':a}, (r) ->
+        do model
+        do persona
+        do route
+    onlogout: ->
+      doc.cookie = "S="
+    onready: persona
+    
