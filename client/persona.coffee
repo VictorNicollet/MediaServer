@@ -33,8 +33,8 @@ $ =>
   @persona = ->
 
     u = email()
-    $o.toggle !u
-    $i.toggle !!u
+    $i.toggle !u
+    $o.toggle !!u
 
     $('#username').text(u || '')
 
@@ -44,14 +44,14 @@ $ =>
         .open('div',{class:'alert alert-info login'})
         .open('strong').esc("You are not logged in.").close()
         .open('a',{class:'persona-button',href:'javascript:void(0)'},
-          (r) -> r.$.click -> id.request())
+          (r) -> r.$.click -> id.request())          
         .open('span').esc('Login')
         .show()
 
   # Run persona. 
         
   id.watch
-    loggedInuser: email()
+    loggedInUser: email()
     onlogin: (a) ->
       post 'login', {'assertion':a}, (r) ->
         do model

@@ -38,7 +38,7 @@ cache = new Cache(50 * 1024 * 1024)
 #    calls `next(err,data)`. If no data is stored there, calls
 #    `next(null,null)` (it does not count as an error).  
 #
-#  - `getSignedUrl(path)`: returns a public access URL for
+#  - `getUrl(path)`: returns a public access URL for
 #    `path`.
 #
 #  - `glob(expr,cursor,count,next)`: enumerates up to `count`
@@ -197,7 +197,7 @@ class Store
   # Get a visitable URL, that lasts an entire day.
  
   getUrl: (path) ->
-    @_db.getSignedUrl path
+    @_db.getUrl path
     
   # Iterate through a list of all keys that match a certain
   # glob expression.

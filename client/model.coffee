@@ -95,5 +95,62 @@ do ->
     reqs.push f
     model()
 
+  # A list model. Uses a list identifier (what the list is) and an
+  # item identifier (what in item is).  
+  #
+  # Argument is a function that queries the entire list, based on
+  # a list identifier.
 
-  
+  @List = (f) ->
+    
+    # The function used to load data.
+    @f = f
+
+    # The identifier of the currently loaded list.
+    @id = null
+
+    # This cache contains each element in the currently loaded
+    # list, by item-id.
+    @c = {}
+
+    @
+
+  List.prototype = 
+
+    # Loads a fresh list by its id, and returns the elements
+    # asynchronously.
+      
+    all: (l,n) ->
+      @f l, (r) =>
+        @id = l
+        @c = {}
+        for it in (@l = r)
+          id = it
+          id = id.id while typeof id == 'object'
+          @c[id] = it
+        n @l
+
+    # Grabs the cached value of the specified item in the specified
+    # list. Returns null if no cached version exists.
+
+    get: (l,i) ->      
+      if @id == l && i of @c
+        @c[i]
+      else
+        null
+
+    # Grabs a proof of the cached value. Assumes that the item contains
+    # a field 'id' which is a standard proof (that is, it contains
+    # an expired field).
+
+    proof: (l,i,n) ->
+      rec = (c) ->
+        if l == @id && i of @c && @c[i].id.expires.notYet()
+          n @c[i].id
+        else if c
+          all l, -> rec false
+        else
+          n null
+      rec true 
+
+    

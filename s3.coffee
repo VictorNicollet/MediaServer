@@ -69,11 +69,11 @@ wrapper =
           next null
     retry 5
 
-  getPublicUrl: (path) ->
+  getUrl: (path) ->
     obj =
       Bucket: @bucket
       Key: @prefix + '/' + path
-    @S3.getPublicUrl 'getObject', obj
+    @S3.getSignedUrl 'getObject', obj
 
   withPrefix: (prefix,cursor,count,next) ->
 

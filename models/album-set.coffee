@@ -143,7 +143,7 @@ class AlbumSet
     value =
       id: Proof.make { id: album.id, access: access }
       name: album.name
-      thumb: Album.getThumbUrl album.id, album.thumb
+      thumb: Album.getThumbUrl @_store, album.id, album.thumb
       size: album.size
 
     if isAdmin

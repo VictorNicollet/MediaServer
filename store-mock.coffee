@@ -23,7 +23,7 @@ class StoreMock
       return next null, @_keys[path] 
     next null, null
 
-  getSignedUrl: (path) ->
+  getUrl: (path) ->
     'https://test/' + path
 
   withPrefix: (prefix,start,count,next) ->
