@@ -4,6 +4,7 @@
   "dispatch.coffee",
   "model.coffee",
   "persona.coffee",
+  "slideshow.coffee", 
   "gallery.coffee", 
   "albums.coffee"
 ]
