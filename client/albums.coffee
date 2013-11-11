@@ -16,15 +16,26 @@ do ->
         unlock() 
 
   "/".route (r) ->
+    
+    Albums.all '', (l) ->
 
-    r.table({class:"table album"})
+      r.table({class:"table album"})
+        .thead().tr().td({colspan:3})
 
-      .thead().tr().td({colspan:3}).h2().esc("Albums")
-      .close(4)
+      if isAdmin
+        r.button {type:'button',class:'btn btn-success btn-sm pull-right'}, (r) ->
+          r.$.click ->
+            name = prompt "Name of the new album"
+            if name
+              lock (unlock) ->
+                post "album/create", {name:name}, (r) -> 
+                  go("/album/" + r.album.id.id)
+                  unlock()
+        .esc('New album').close()
 
-      .tbody {}, (r) ->
-
-        Albums.all '', (l) ->
+      r.h2().esc("Albums").close(4)
+  
+        .tbody {}, (r) ->
 
           for album in l 
 
@@ -49,7 +60,7 @@ do ->
  
           r.show()
         
-      .show()
+        .show()
 
   # The list-of-pics-in-album model.
   @Pictures = new List (l,next) ->
@@ -68,7 +79,7 @@ do ->
         Albums.proof "", id, (proof) ->
           Pictures.all proof, (all) ->
             if all.length == 0
-              r.div({id:"empty",class:'well empty'}).text('No pictures in this album')
+              r.div({id:"empty",class:'well empty'}).esc('No pictures in this album')
               .show()
             else
               gallery r, proof, (g) -> 
