@@ -45,7 +45,7 @@ do ->
               if c > 0              
                 share = if c == 1
                 then "Shared with 1 person"
-                else "Shared with #{count} people"
+                else "Shared with #{c} people"
 
             r.tr()
               .td({class: 'rowsize'}).span().esc(album.size || '').close(2)
@@ -88,3 +88,24 @@ do ->
                 return
                 
       r.show()
+
+  # Sharing an album
+  "/album/*/share".route (r,id) ->
+    Albums.get "", id, (album) ->
+      return if !isAdmin 
+      r.h3().esc(album.name).close()
+      r.form {role:'form'}, (r) ->
+        r.$.submit ->
+          $(@).find('button').attr 'disabled', true
+          access = {}
+          access[id] = $(@).find('textarea').val().split /[\n\r\t ;,]/
+          lock (unlock) ->
+            post "albums/share", access, ->
+              go("/album/" + id)
+              unlock()
+          false
+      .div({class:'form-group'})
+        .textarea({class:"form-control"}).esc(album.get.join "; ").close()
+      .close()
+      .button({type:'submit',class:'btn btn-primary'}).esc('Save')
+      .show()      
