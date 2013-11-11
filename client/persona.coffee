@@ -41,11 +41,11 @@ $ =>
     if !u
       $c.html ''
       new R($c)
-        .open('div',{class:'alert alert-info login'})
-        .open('strong').esc("You are not logged in.").close()
-        .open('a',{class:'persona-button',href:'javascript:void(0)'},
+        .div({class:'alert alert-info login'})
+        .strong().esc("You are not logged in.").close()
+        .a({class:'persona-button',href:'javascript:void(0)'},
           (r) -> r.$.click -> id.request())          
-        .open('span').esc('Login')
+        .span().esc('Login')
         .show()
 
   # Run persona. 

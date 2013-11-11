@@ -20,7 +20,7 @@ do ->
     # unclosed, closes them.
   
     show: () ->
-      [].push.call @h, @e
+      [].push.apply @h, @e
       $(@h.join '').prependTo @$
       @c[k] new R $ k for k of @c
              
@@ -75,7 +75,7 @@ do ->
       else
         @open t, a, f 
 
-  for t in [ "a", "span", "div", "td", "tr", "table", "button", "h1", "h2", "h3", "h4", "h5", "h6", "textarea", "label", "form", "p", "thead", "tbody" ]
+  for t in [ "a", "span", "div", "td", "tr", "table", "button", "h1", "h2", "h3", "h4", "h5", "h6", "textarea", "label", "form", "p", "thead", "tbody", "strong" ]
     tag false, t
 
   for t in [ "img", "input" ]
