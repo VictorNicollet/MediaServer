@@ -4,7 +4,6 @@ statics = require "./statics"
 session = require "./session"
 seq = require "./seq"
 album = require "./album"
-mail = require './mail'
 express = require "express"
 
 app = do express
@@ -20,7 +19,6 @@ startApplication = (app, next) ->
 
 # All module initialization functions
 installers = [
-  mail.install,
   album.install,
   session.install,
   statics.install,
