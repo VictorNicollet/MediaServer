@@ -4,11 +4,10 @@ class Gallery
   maxWidth: 1024
   maxPending: 2
 
-  constructor: (@$target,@gap=10) ->
+  constructor: (@albumP,@$target,@gap=10) ->
     @width = @$target.width()
     @pictures = []
     @next = 0
-    @onLargePicture = []
     @pending = 0
     @$target.after "<div class='gallery-loading'>Loading...</div>"
 
@@ -24,6 +23,7 @@ class Gallery
     pic =
       data: p
       started: false
+      url: p.url
       $w: @wrap p, @pictures.length
 
     pic.$i = $(img).appendTo pic.$w 
@@ -36,20 +36,19 @@ class Gallery
       pic.loaded = true
       pic.ratio = img.naturalWidth / (img.naturalHeight || 1)
       if img.naturalHeight > @maxHeight || img.naturalWidth > @maxWidth
-        for f in @onLargePicture
-          f pic, (url) ->
-            img2 = mk()
-            img2.onload = ->
-              $i = $ img2
-              $i.css
-                width: img.width
-                height: img.height
-                float: "left"
-                marginRight: $(img).css 'marginRight'
-              $i.insertBefore pic.$i
-              pic.$i.remove()
-              pic.$i = $i
-            img2.src = url            
+        resize pic.$i[0], pic.data.id, @albumP, (url) ->
+          img2 = mk()
+          img2.onload = ->
+            $i = $ img2
+            $i.css
+              width: img.width
+              height: img.height
+              float: "left"
+              marginRight: $(img).css 'marginRight'
+            $i.insertBefore pic.$i
+            pic.$i.remove()
+            pic.$i = $i
+          img2.src = url            
       @unfit unfit
       do @start
 
@@ -152,13 +151,13 @@ class Gallery
 
 do ->
 
-  @gallery = (r,id,n) ->
+  @gallery = (r,albumP,n) ->
     gid = 'gallery'
     $('#empty').remove()
     $t = $('#'+gid)
     if $t.length == 0
       r.div({id: gid,class:'row'}).div {}, ->        
-        $t.data gid, (g = new Gallery $('#'+gid))
+        $t.data gid, (g = new Gallery albumP, $('#'+gid))
         n g
       r.show()
     else

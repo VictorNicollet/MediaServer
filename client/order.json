@@ -5,6 +5,7 @@
   "model.coffee",
   "persona.coffee",
   "slideshow.coffee", 
+  "resize.coffee", 
   "gallery.coffee", 
   "albums.coffee"
 ]

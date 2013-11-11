@@ -16,10 +16,12 @@ class Slideshow
         if e.target == @$[0] || $(e.target).is('img')
           @$.remove()
           
-      $('<a id=slideshow-prev href="javascript:void(0)"><span>&lt;</span></a>').appendTo(@$).click =>
+      $('<a id=slideshow-prev href="javascript:void(0)"><span>&lt;</span></a>')
+      .appendTo(@$).click =>
         @display(@c - 1) if @c > 0 
 
-      $('<a id=slideshow-next href="javascript:void(0)"><span>&gt;</span></a>').appendTo(@$).click =>
+      $('<a id=slideshow-next href="javascript:void(0)"><span>&gt;</span></a>')
+      .appendTo(@$).click =>
         @display(@c + 1) if @c < @pics.length - 1 
   
     @display @c
@@ -102,5 +104,5 @@ class Slideshow
     $(img).appendTo(@$).hide()
       
 $ ->
-  Route.onChange.push ->
+  $c.on 'route', ->
     $('#slideshow').remove()
