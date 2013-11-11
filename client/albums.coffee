@@ -71,8 +71,9 @@ do ->
 
   "/album/*".route (r, id) ->
     Albums.get "", id, (album) -> 
-      if album.id.access = 'PUT' 
-        r.p({class:'pull-right text-mute'}).esc('Drop pictures here to upload them').close()
+      if album.id.access = 'PUT'        
+        r.a({href:'/album/'+id+'/share',class:'share pull-right btn btn-default btn-sm'}).esc('Share').close()
+        .p({class:'pull-right text-mute'}).esc('Drop pictures here to upload them').close()
       r.h3().esc(album.name).close()
       r.div {}, (r) -> 
 
