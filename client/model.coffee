@@ -46,10 +46,13 @@ do ->
       
     return r
 
+  n = 0
+
   # Run a query against the server. This is a generic function, the
   # definitions for specific GET and POST functions are below.
 
   q = (method) -> (what,data,next) ->
+    i = ++n
     post = method == 'POST'
     $.ajax
       url: '/api/' + what
@@ -131,24 +134,28 @@ do ->
         n @l
 
     # Grabs the cached value of the specified item in the specified
-    # list. Returns null if no cached version exists.
+    # list. Does nothing if expired, loads if present.
 
-    get: (l,i) ->      
-      if @id == l && i of @c
-        @c[i]
-      else
-        null
+    get: (l,i,n) ->
+      rec = (c) =>
+        if l == @id && i of @c 
+          n @c[i]
+        else if c
+          @all l, -> rec false
+        else
+          n null
+      rec true 
 
     # Grabs a proof of the cached value. Assumes that the item contains
     # a field 'id' which is a standard proof (that is, it contains
     # an expired field).
 
     proof: (l,i,n) ->
-      rec = (c) ->
+      rec = (c) =>
         if l == @id && i of @c && @c[i].id.expires.notYet()
           n @c[i].id
         else if c
-          all l, -> rec false
+          @all l, -> rec false
         else
           n null
       rec true 

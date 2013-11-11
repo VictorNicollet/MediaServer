@@ -12,9 +12,11 @@ class Gallery
     @pending = 0
     @$target.after "<div class='gallery-loading'>Loading...</div>"
 
-  wrap: (p) -> $ '<div/>'
+  wrap: (p,i) ->
+    $('<a href="javascript:void(0)"/>').click =>                               
+      new Slideshow @pictures, i 
 
-  addPicture: (p) ->
+  add: (p) ->
 
     mk = -> document.createElement 'img'
     img = mk()
@@ -147,3 +149,17 @@ class Gallery
       $line.fadeIn 1000
       
     do @fitAll    
+
+do ->
+
+  @gallery = (r,id,n) ->
+    gid = 'gallery'
+    $('#empty').remove()
+    $t = $('#'+gid)
+    if $t.length == 0
+      r.div({id: gid,class:'row'}).div {}, ->        
+        $t.data gid, (g = new Gallery $('#'+gid))
+        n g
+      r.show()
+    else
+      n $t.data gid

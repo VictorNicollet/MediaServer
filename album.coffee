@@ -63,10 +63,10 @@ module.exports.install = (app,next) ->
   # Return the list of all pictures in an album
   api.post app, 'album/pictures', (req, fail, json) ->
 
-    id = req.body.album
+    id = req.body
     return fail "Missing album signature." if !id 
 
-    Album.get id, (err,album) ->
+    Album.get store, id, (err,album) ->
       return fail err if err
       return fail "You are not allowed to view this album." if !album.isReadable()      
       

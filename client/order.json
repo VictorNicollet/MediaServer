@@ -4,5 +4,6 @@
   "dispatch.coffee",
   "model.coffee",
   "persona.coffee",
+  "gallery.coffee", 
   "albums.coffee"
 ]

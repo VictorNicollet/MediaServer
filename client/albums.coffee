@@ -51,4 +51,28 @@ do ->
         
       .show()
 
-    
+  # The list-of-pics-in-album model.
+  P = new List (l,next) ->
+    lock (unlock) ->
+      post "album/pictures", l, (r) ->
+        next r.pictures
+        unlock()
+
+  "/album/*".route (r, id) ->
+    A.get "", id, (album) -> 
+      if album.id.access = 'PUT' 
+        r.p({class:'pull-right text-mute'}).esc('Drop pictures here to upload them').close()
+      r.h3().esc(album.name).close()
+      r.div {}, (r) -> 
+
+        A.proof "", id, (proof) ->
+          P.all proof, (all) ->
+            if all.length == 0
+              r.div({id:"empty",class:'well empty'}).text('No pictures in this album')
+              .show()
+            else
+              gallery r, id, (g) -> 
+                g.add pic for pic in all 
+                return
+                
+      r.show()

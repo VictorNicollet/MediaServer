@@ -13,8 +13,8 @@ do ->
     re = @
     routes.push (p) ->
       if t = re.test p 
-        $c.html('').trigger 'route'
-        f new R($c), p.match(re)[1..]
+        $c.html('<div/>').trigger 'route'
+        f new R($c.children()), p.match(re)[1..]
       t
       
   String::route = (f) ->
