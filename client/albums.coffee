@@ -2,7 +2,11 @@
 
 do ->
 
+  # True if the user has administration rights on the albums.
+
   isAdmin = false
+
+  # The list-of-all-albums model.
 
   A = new List (l,next) ->
     lock (unlock) ->
@@ -28,7 +32,9 @@ do ->
             if isAdmin
               c = album.get.length + album.put.length
               if c > 0              
-                share = if c == 1 then "Shared with 1 person" else "Shared with #{count} people"
+                share = if c == 1
+                then "Shared with 1 person"
+                else "Shared with #{count} people"
 
             r.tr()
               .td({class: 'rowsize'}).span().esc(album.size || '').close(2)
