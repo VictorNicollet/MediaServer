@@ -32,7 +32,7 @@ do ->
   
   @go = (p) ->
     history.pushState null, null, p 
-    go p 
+    route p 
 
   if 'pushState' of history
 
